@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('path');
+const os = require('os');
 global.squeezeliteMCPluginLibRoot = path.resolve(__dirname) + '/lib';
 
 const libQ = require('kew');
@@ -744,6 +745,11 @@ ControllerSqueezeliteMC.prototype.getPlayerConfig = async function () {
   const playerName = sm.getConfigValue('playerName', '');
   if (playerNameType === 'custom' && playerName) {
     config.playerName = `"${playerName}"`;
+  }
+  else if (os.hostname()) {
+    // Default - use device hostname. Don't rely on Squeezelite to set this, since it sometimes sets its
+    // name to "SqueezeLite", which is not what we want).
+    config.playerName = os.hostname();
   }
 
   // Alsa
