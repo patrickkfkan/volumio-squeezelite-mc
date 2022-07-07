@@ -7,7 +7,7 @@ global.squeezeliteMCPluginLibRoot = path.resolve(__dirname) + '/lib';
 const libQ = require('kew');
 const { PlayerStatusMonitor } = require('./lib/monitor');
 const { PlayerFinder } = require('./lib/finder');
-const { getIPAddresses, kewToJSPromise, jsPromiseToKew, PlaybackTimer } = require('./lib/util');
+const { getNetworkInterfaces, kewToJSPromise, jsPromiseToKew, PlaybackTimer } = require('./lib/util');
 const { CommandDispatcher } = require('./lib/command');
 const { initSqueezeliteService, stopSqueezeliteService, getAlsaFormats, ERR_DEVICE_BUSY, getSqueezeliteServiceStatus } = require('./lib/system');
 const { Proxy } = require('./lib/proxy');
@@ -439,10 +439,23 @@ ControllerSqueezeliteMC.prototype.initAndStartPlayerFinder = async function() {
   }
 
   if (this.playerFinder.getStatus() === PlayerFinder.STOPPED) {
+    const networkAddresses = Object.values(getNetworkInterfaces());
+    const ipAddresses = [], macAddresses = [];
+    for (const addresses of networkAddresses) {
+      for (const data of addresses) {
+        if (data.address && !ipAddresses.includes(data.address)) {
+          ipAddresses.push(data.address);
+        }
+        if (data.mac && !macAddresses.includes(data.mac)) {
+          macAddresses.push(data.mac);
+        }
+      }
+    }
     return this.playerFinder.start({
       serverCredentials: sm.getConfigValue('serverCredentials', {}, true),
-      eventFilter: { // Only notify when found or lost player matches Volumio device IP
-        playerIP: getIPAddresses().map((i) => i.ip)
+      eventFilter: { // Only notify when found or lost player matches Volumio device IP and player ID matches mac addr
+        playerIP: ipAddresses,
+        playerId: macAddresses
       }
     });
   }

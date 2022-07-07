@@ -38,7 +38,6 @@
 		"kew": "^0.7.0",
 		"lms-cli-notifications": "^0.1.2",
 		"lms-discovery": "^0.1.0",
-		"network-interfaces": "^1.1.0",
 		"node-fetch": "^2.6.7",
 		"string-format": "^2.0.0",
 		"v-conf": "^1.4.2"
