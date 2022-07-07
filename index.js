@@ -495,6 +495,15 @@ ControllerSqueezeliteMC.prototype.handlePlayerDiscoveryError = function (message
 
 ControllerSqueezeliteMC.prototype.handlePlayerStatusUpdate = async function (data) {
   const { player, status } = data;
+  const isCurrentService = this.isCurrentService();
+
+  if (!status.playlist_loop) {  // Empty playlist
+    if (isCurrentService) {
+      this.pushEmptyState();
+    }
+    return;
+  }
+
   const track = status.playlist_loop[0];
   const albumartUrl = (() => {
     let url = null;
@@ -606,7 +615,6 @@ ControllerSqueezeliteMC.prototype.handlePlayerStatusUpdate = async function (dat
   }
   this.lastState = volumioState;
 
-  const isCurrentService = this.isCurrentService();
   if (!isCurrentService && volumioState.status === 'play') {
     sm.getLogger().info(`[squeezelite_mc] 'play' status received while not being the current service.`);
     await this.stopCurrentServiceAndSetVolatile();
