@@ -558,7 +558,7 @@ ControllerSqueezeliteMC.prototype.handlePlayerStatusUpdate = async function (dat
     status: status.mode,
     service: this.serviceName,
     title: track.title,
-    artist: track.artist,
+    artist: track.artist || track.trackartist || track.albumartist,
     album: track.album || track.remote_title,
     albumart: albumartUrl,
     uri: '',
