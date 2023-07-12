@@ -16,7 +16,7 @@ import Proxy, { ProxyStatus } from './lib/Proxy';
 import PlayerFinder, { PlayerFinderStatus } from './lib/PlayerFinder';
 import equal from 'fast-deep-equal';
 import { ServerCredentials } from './lib/types/Server';
-import { PlayerConfig, PlayerStatus } from './lib/types/Player';
+import Player, { PlayerConfig, PlayerRunState, PlayerStatus } from './lib/types/Player';
 
 interface VolumioState {
   service: string;
@@ -24,16 +24,16 @@ interface VolumioState {
   title?: string;
   artist?: string;
   album?: string;
-  albumart: string;
-  uri: string;
+  albumart?: string;
+  uri: '';
   trackType?: string;
   seek?: number;
-  duration: number;
+  duration?: number;
   samplerate?: string;
   bitdepth?: string;
   bitrate?: string;
   channels?: number;
-  volume: number;
+  volume?: number;
   mute?: boolean;
   isStreaming?: boolean;
   repeat?: boolean;
@@ -86,7 +86,7 @@ class ControllerSqueezeliteMC {
   #context: any;
   #config: any;
   #commandRouter: any;
-  #playerStatus: PlayerStatus | undefined;
+  #playerRunState: PlayerRunState | undefined;
   #playerStatusMonitor: PlayerStatusMonitor | null;
   #playbackTimer: PlaybackTimer | null;
   #lastState: VolumioState | null;
@@ -139,23 +139,23 @@ class ControllerSqueezeliteMC {
          * Status conf
          */
         let statusDesc, statusButtonType;
-        if (status === 'active' && this.#playerStatus !== PlayerStatus.ConfigRequireRestart) {
+        if (status === 'active' && this.#playerRunState !== PlayerRunState.ConfigRequireRestart) {
           const player = this.#playerStatusMonitor ? this.#playerStatusMonitor.getPlayer() : null;
           statusDesc = player ?
             sm.getI18n('SQUEEZELITE_MC_DESC_STATUS_CONNECTED', player.server.name, player.server.ip) :
             sm.getI18n('SQUEEZELITE_MC_DESC_STATUS_STARTED');
         }
-        else if (this.#playerStatus === PlayerStatus.StartError) {
+        else if (this.#playerRunState === PlayerRunState.StartError) {
           statusDesc = sm.getI18n('SQUEEZELITE_MC_DESC_STATUS_ERR_START');
           statusButtonType = 'start';
         }
-        else if (this.#playerStatus === PlayerStatus.ConfigRequireRestart) {
+        else if (this.#playerRunState === PlayerRunState.ConfigRequireRestart) {
           statusDesc = (status === 'active') ?
             sm.getI18n('SQUEEZELITE_MC_DESC_STATUS_ERR_RESTART_CONFIG') :
             sm.getI18n('SQUEEZELITE_MC_DESC_STATUS_ERR_START');
           statusButtonType = (status === 'active') ? 'restart' : 'start';
         }
-        else if (this.#playerStatus === PlayerStatus.ConfigRequireRevalidate) {
+        else if (this.#playerRunState === PlayerRunState.ConfigRequireRevalidate) {
           statusDesc = sm.getI18n('SQUEEZELITE_MC_DESC_STATUS_ERR_REVALIDATE');
           statusButtonType = 'revalidate';
         }
@@ -378,11 +378,11 @@ class ControllerSqueezeliteMC {
       })
       .then(() => {
         sm.toast('success', sm.getI18n('SQUEEZELITE_MC_STARTED'));
-        this.#playerStatus = PlayerStatus.Normal;
+        this.#playerRunState = PlayerRunState.Normal;
         defer.resolve();
       })
       .catch((error) => {
-        this.#playerStatus = PlayerStatus.StartError;
+        this.#playerRunState = PlayerRunState.StartError;
         if (error instanceof SystemError && error.code === SystemErrorCode.DeviceBusy) {
           sm.toast('error', sm.getI18n('SQUEEZELITE_MC_ERR_START_DEV_BUSY'));
           defer.resolve();
@@ -489,31 +489,31 @@ class ControllerSqueezeliteMC {
     sm.toast('error', sm.getI18n('SQUEEZELITE_MC_ERR_PLAYER_DISCOVER', message));
   }
 
-  async #handlePlayerStatusUpdate(data: any) {
+  async #handlePlayerStatusUpdate(data: {player: Player; status: PlayerStatus}) {
     const { player, status } = data;
     const isCurrentService = this.#isCurrentService();
 
-    if (!status.playlist_loop) { // Empty playlist
+    if (!status.currentTrack) {
       if (isCurrentService) {
         this.#pushEmptyState();
       }
       return;
     }
 
-    const track = status.playlist_loop[0];
+    const track = status.currentTrack;
     const albumartUrl = (() => {
       let url: string | null = null;
       let useProxy = false;
-      if (track.artwork_url) {
-        if (track.artwork_url.startsWith('/imageproxy')) {
-          url = `http://${player.server.ip}:${player.server.jsonPort}${track.artwork_url}`;
+      if (track.artworkUrl) {
+        if (track.artworkUrl.startsWith('/imageproxy')) {
+          url = `http://${player.server.ip}:${player.server.jsonPort}${track.artworkUrl}`;
           useProxy = true;
         }
         else {
-          url = track.artwork_url;
+          url = track.artworkUrl;
         }
       }
-      else if (track.coverart) {
+      else if (track.coverArt) {
         url = `http://${player.server.ip}:${player.server.jsonPort}/music/current/cover.jpg?player=${encodeURIComponent(player.id)}&ms=${Date.now()}`;
         useProxy = true;
       }
@@ -552,24 +552,23 @@ class ControllerSqueezeliteMC {
 
     })();
 
-    const isStreaming = track.duration === 0 || !status.can_seek;
+    const isStreaming = track.duration === 0 || !status.canSeek;
     const volumioState: VolumioState = {
       status: status.mode,
       service: 'squeezelite_mc',
       title: track.title,
-      artist: track.artist || track.trackartist || track.albumartist,
-      album: track.album || track.remote_title,
+      artist: track.artist || track.trackArtist || track.albumArtist,
+      album: track.album || track.remoteTitle,
       albumart: albumartUrl,
       uri: '',
-      trackType: LMS_TRACK_TYPE_TO_VOLUMIO[track.type] || track.type,
-      seek: !isStreaming ? Math.ceil(status.time * 1000) : undefined,
-      duration: Math.ceil(track.duration),
-      samplerate: track.samplerate ? `${track.samplerate / 1000} kHz` : undefined,
-      bitdepth: track.samplesize ? `${track.samplesize} bit` : undefined,
-      //Bitrate: track.bitrate,
+      trackType: track.type ? LMS_TRACK_TYPE_TO_VOLUMIO[track.type] || track.type : undefined,
+      seek: !isStreaming && status.time !== undefined ? Math.ceil(status.time * 1000) : undefined,
+      duration: track.duration ? Math.ceil(track.duration) : undefined,
+      samplerate: track.sampleRate ? `${track.sampleRate / 1000} kHz` : undefined,
+      bitdepth: track.sampleSize ? `${track.sampleSize} bit` : undefined,
       channels: undefined,
       isStreaming,
-      volume: status['mixer volume']
+      volume: status.volume
     };
 
     // Volatile state does not support the 'bitrate' field!
@@ -579,7 +578,7 @@ class ControllerSqueezeliteMC {
       volumioState.bitdepth = undefined;
     }
 
-    switch (status['playlist repeat']) {
+    switch (status.repeatMode) {
       case LMS_REPEAT_PLAYLIST:
         volumioState.repeat = true;
         volumioState.repeatSingle = false;
@@ -593,7 +592,7 @@ class ControllerSqueezeliteMC {
         volumioState.repeatSingle = false;
     }
 
-    switch (status['playlist shuffle']) {
+    switch (status.shuffleMode) {
       case LMS_SHUFFLE_BY_SONG:
       case LMS_SHUFFLE_BY_ALBUM:
         volumioState.random = true;
@@ -606,7 +605,7 @@ class ControllerSqueezeliteMC {
     // So we request another status update after a short timeout period.
     if (this.#lastState) {
       const isNewSong = this.#lastState.title !== volumioState.title;
-      if (isNewSong && track.artwork_url) {
+      if (isNewSong && track.artworkUrl) {
         setTimeout(() => {
           this.#requestPlayerStatusUpdate();
         }, 3000);
@@ -674,7 +673,7 @@ class ControllerSqueezeliteMC {
         const isPlaybackByMpd = currentService === 'mpd' || (statemachine.isConsume && statemachine.consumeUpdateService === 'mpd');
         if (isPlaybackByMpd) {
           /**
-           * mpdPlugin pushes 'stop' states which do not get ignored by the statemachine even after we have called setVolatile().
+           * MpdPlugin pushes 'stop' states which do not get ignored by the statemachine even after we have called setVolatile().
            * The statemachine just combines the volatile state with the mpdplugin's 'stop' states and completely messes itself up.
            * We need to tell mpdPlugin to ignore updates after stopping. Note, however, if the current service / state consumption
            * is not handled by mpdPlugin, but similarly pushes states after stopping, then this will also screw up the statemachine...
@@ -902,7 +901,7 @@ class ControllerSqueezeliteMC {
       if (this.#playerConfig) {
         this.#playerConfig.invalidated = true;
       }
-      this.#playerStatus = PlayerStatus.ConfigRequireRevalidate;
+      this.#playerRunState = PlayerRunState.ConfigRequireRevalidate;
 
       return;
     }
@@ -923,7 +922,7 @@ class ControllerSqueezeliteMC {
       try {
         await initSqueezeliteService(config);
         sm.toast('success', sm.getI18n('SQUEEZELITE_MC_RESTARTED_CONFIG'));
-        this.#playerStatus = PlayerStatus.Normal;
+        this.#playerRunState = PlayerRunState.Normal;
         if (opts.refreshUIConf) {
           sm.refreshUIConfig();
         }
@@ -935,7 +934,7 @@ class ControllerSqueezeliteMC {
         else {
           sm.toast('error', sm.getErrorMessage(sm.getI18n('SQUEEZELITE_MC_ERR_RESTART'), error, false));
         }
-        this.#playerStatus = PlayerStatus.ConfigRequireRestart;
+        this.#playerRunState = PlayerRunState.ConfigRequireRestart;
         if (this.#playerConfig) {
           this.#playerConfig.invalidated = true;
         }

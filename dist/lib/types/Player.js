@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PlayerStatus = void 0;
-var PlayerStatus;
-(function (PlayerStatus) {
-    PlayerStatus[PlayerStatus["Normal"] = 0] = "Normal";
-    PlayerStatus[PlayerStatus["StartError"] = -1] = "StartError";
-    PlayerStatus[PlayerStatus["ConfigRequireRestart"] = -2] = "ConfigRequireRestart";
-    PlayerStatus[PlayerStatus["ConfigRequireRevalidate"] = -3] = "ConfigRequireRevalidate";
-})(PlayerStatus = exports.PlayerStatus || (exports.PlayerStatus = {}));
+exports.PlayerRunState = void 0;
+var PlayerRunState;
+(function (PlayerRunState) {
+    PlayerRunState[PlayerRunState["Normal"] = 0] = "Normal";
+    PlayerRunState[PlayerRunState["StartError"] = -1] = "StartError";
+    PlayerRunState[PlayerRunState["ConfigRequireRestart"] = -2] = "ConfigRequireRestart";
+    PlayerRunState[PlayerRunState["ConfigRequireRevalidate"] = -3] = "ConfigRequireRevalidate";
+})(PlayerRunState = exports.PlayerRunState || (exports.PlayerRunState = {}));
 //# sourceMappingURL=Player.js.map

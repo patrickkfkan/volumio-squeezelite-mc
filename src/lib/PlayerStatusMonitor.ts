@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import sm from './SqueezeliteMCContext';
 import { Notification, NotificationListener } from 'lms-cli-notifications';
-import Player from './types/Player';
+import Player, { PlayerStatus } from './types/Player';
 import { ServerCredentials } from './types/Server';
 import { getServerConnectParams } from './Util';
 import { sendRpcRequest } from './RPC';
@@ -107,7 +107,7 @@ export default class PlayerStatusMonitor extends EventEmitter {
     }
     this.emit('update', {
       player: this.#player,
-      status: playerStatus.result
+      status: this.#parsePlayerStatusResult(playerStatus.result)
     });
   }
 
@@ -167,5 +167,43 @@ export default class PlayerStatusMonitor extends EventEmitter {
         error: error
       };
     }
+  }
+
+  #parsePlayerStatusResult(data: any) {
+    const result: PlayerStatus = {
+      mode: data.mode,
+      time: data.time,
+      volume: data['mixer volume'],
+      repeatMode: data['playlist repeat'],
+      shuffleMode: data['playlist shuffle'],
+      canSeek: data['can_seek']
+    };
+
+    const track = data.playlist_loop[0];
+    if (track) {
+      result.currentTrack = {
+        type: track.type,
+        title: track.title,
+        artist: track.artist,
+        trackArtist: track.trackartist,
+        albumArtist: track.albumartist,
+        album: track.album,
+        remoteTitle: track.remote_title,
+        artworkUrl: track.artwork_url,
+        coverArt: track.coverart,
+        duration: track.duration,
+        sampleRate: track.samplerate,
+        sampleSize: track.samplesize,
+        bitrate: track.bitrate
+      };
+    }
+
+    return result;
+  }
+
+  on(event: 'update', listener: (data: {player: Player; status: PlayerStatus}) => void): this;
+  on(event: 'disconnect', listener: (player: Player) => void): this;
+  on(event: string | symbol, listener: (...args: any[]) => void): this {
+    return super.on(event, listener);
   }
 }

@@ -13,7 +13,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _PlayerStatusMonitor_instances, _PlayerStatusMonitor_player, _PlayerStatusMonitor_serverCredentials, _PlayerStatusMonitor_notificationListener, _PlayerStatusMonitor_statusRequestTimer, _PlayerStatusMonitor_statusRequestController, _PlayerStatusMonitor_syncMaster, _PlayerStatusMonitor_handleDisconnect, _PlayerStatusMonitor_handleNotification, _PlayerStatusMonitor_getStatusAndEmit, _PlayerStatusMonitor_abortCurrentAndPendingStatusRequest, _PlayerStatusMonitor_createAndStartNotificationListener, _PlayerStatusMonitor_requestPlayerStatus, _PlayerStatusMonitor_getPlayerSyncMaster;
+var _PlayerStatusMonitor_instances, _PlayerStatusMonitor_player, _PlayerStatusMonitor_serverCredentials, _PlayerStatusMonitor_notificationListener, _PlayerStatusMonitor_statusRequestTimer, _PlayerStatusMonitor_statusRequestController, _PlayerStatusMonitor_syncMaster, _PlayerStatusMonitor_handleDisconnect, _PlayerStatusMonitor_handleNotification, _PlayerStatusMonitor_getStatusAndEmit, _PlayerStatusMonitor_abortCurrentAndPendingStatusRequest, _PlayerStatusMonitor_createAndStartNotificationListener, _PlayerStatusMonitor_requestPlayerStatus, _PlayerStatusMonitor_getPlayerSyncMaster, _PlayerStatusMonitor_parsePlayerStatusResult;
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = __importDefault(require("events"));
 const SqueezeliteMCContext_1 = __importDefault(require("./SqueezeliteMCContext"));
@@ -56,6 +56,9 @@ class PlayerStatusMonitor extends events_1.default {
     }
     requestUpdate() {
         __classPrivateFieldGet(this, _PlayerStatusMonitor_instances, "m", _PlayerStatusMonitor_getStatusAndEmit).call(this);
+    }
+    on(event, listener) {
+        return super.on(event, listener);
     }
 }
 exports.default = PlayerStatusMonitor;
@@ -112,7 +115,7 @@ _PlayerStatusMonitor_player = new WeakMap(), _PlayerStatusMonitor_serverCredenti
     }
     this.emit('update', {
         player: __classPrivateFieldGet(this, _PlayerStatusMonitor_player, "f"),
-        status: playerStatus.result
+        status: __classPrivateFieldGet(this, _PlayerStatusMonitor_instances, "m", _PlayerStatusMonitor_parsePlayerStatusResult).call(this, playerStatus.result)
     });
 }, _PlayerStatusMonitor_abortCurrentAndPendingStatusRequest = function _PlayerStatusMonitor_abortCurrentAndPendingStatusRequest() {
     if (__classPrivateFieldGet(this, _PlayerStatusMonitor_statusRequestTimer, "f")) {
@@ -165,5 +168,33 @@ async function _PlayerStatusMonitor_getPlayerSyncMaster() {
             error: error
         };
     }
+}, _PlayerStatusMonitor_parsePlayerStatusResult = function _PlayerStatusMonitor_parsePlayerStatusResult(data) {
+    const result = {
+        mode: data.mode,
+        time: data.time,
+        volume: data['mixer volume'],
+        repeatMode: data['playlist repeat'],
+        shuffleMode: data['playlist shuffle'],
+        canSeek: data['can_seek']
+    };
+    const track = data.playlist_loop[0];
+    if (track) {
+        result.currentTrack = {
+            type: track.type,
+            title: track.title,
+            artist: track.artist,
+            trackArtist: track.trackartist,
+            albumArtist: track.albumartist,
+            album: track.album,
+            remoteTitle: track.remote_title,
+            artworkUrl: track.artwork_url,
+            coverArt: track.coverart,
+            duration: track.duration,
+            sampleRate: track.samplerate,
+            sampleSize: track.samplesize,
+            bitrate: track.bitrate
+        };
+    }
+    return result;
 };
 //# sourceMappingURL=PlayerStatusMonitor.js.map
