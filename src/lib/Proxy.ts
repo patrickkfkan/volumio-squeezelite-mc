@@ -121,7 +121,13 @@ export default class Proxy {
     const url = req.query.url;
     const fallback = req.query.fallback;
 
-    if (typeof url !== 'string') {
+    /**
+     * Volumio's Manifest UI sometimes URI-encodes the already encoded `url`
+     * so it becomes malformed. We need to check whether this is the case.
+     * Fortunately, it seems a request with double-encoded `url` is preceded by
+     * one with the correct, untampered value.
+     */
+    if (typeof url !== 'string' || !this.#validateURL(url)) {
       return;
     }
 
@@ -161,6 +167,16 @@ export default class Proxy {
           sm.getLogger().error(sm.getErrorMessage('[squeezelite_mc] Proxy server failed to redirect response to fallback url:', error, false));
         }
       }
+    }
+  }
+
+  #validateURL(url: string) {
+    try {
+      const test = new URL(url);
+      return !!test;
+    }
+    catch (error) {
+      return false;
     }
   }
 }

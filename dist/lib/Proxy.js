@@ -13,7 +13,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Proxy_instances, _Proxy_serverCredentials, _Proxy_server, _Proxy_status, _Proxy_startPromise, _Proxy_app, _Proxy_handleRequest;
+var _Proxy_instances, _Proxy_serverCredentials, _Proxy_server, _Proxy_status, _Proxy_startPromise, _Proxy_app, _Proxy_handleRequest, _Proxy_validateURL;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProxyStatus = void 0;
 const http_1 = __importDefault(require("http"));
@@ -123,7 +123,13 @@ _Proxy_serverCredentials = new WeakMap(), _Proxy_server = new WeakMap(), _Proxy_
     const serverName = req.query.server_name;
     const url = req.query.url;
     const fallback = req.query.fallback;
-    if (typeof url !== 'string') {
+    /**
+     * Volumio's Manifest UI sometimes URI-encodes the already encoded `url`
+     * so it becomes malformed. We need to check whether this is the case.
+     * Fortunately, it seems a request with double-encoded `url` is preceded by
+     * one with the correct, untampered value.
+     */
+    if (typeof url !== 'string' || !__classPrivateFieldGet(this, _Proxy_instances, "m", _Proxy_validateURL).call(this, url)) {
         return;
     }
     SqueezeliteMCContext_1.default.getLogger().info(`[squeezelite_mc] Proxy request for ${serverName}, URL: ${url}`);
@@ -162,6 +168,14 @@ _Proxy_serverCredentials = new WeakMap(), _Proxy_server = new WeakMap(), _Proxy_
                 SqueezeliteMCContext_1.default.getLogger().error(SqueezeliteMCContext_1.default.getErrorMessage('[squeezelite_mc] Proxy server failed to redirect response to fallback url:', error, false));
             }
         }
+    }
+}, _Proxy_validateURL = function _Proxy_validateURL(url) {
+    try {
+        const test = new URL(url);
+        return !!test;
+    }
+    catch (error) {
+        return false;
     }
 };
 //# sourceMappingURL=Proxy.js.map
