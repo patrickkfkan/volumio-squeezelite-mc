@@ -2,13 +2,23 @@ declare class ControllerSqueezeliteMC {
     #private;
     constructor(context: any);
     getUIConfig(): any;
+    getConfigurationFiles(): string[];
+    /**
+     * Plugin lifecycle
+     */
     onVolumioStart(): any;
     onStart(): any;
-    getConfigurationFiles(): string[];
+    onStop(): any;
     unsetVolatile(): void;
     onUnsetVolatile(): void;
+    /**
+     * Config save functions
+     */
     configSaveServerCredentials(data?: Record<string, string>): void;
     configSaveSqueezeliteSettings(data: any): void;
+    /**
+     * Volumio playback control functions
+     */
     stop(): any;
     play(): any;
     pause(): any;
@@ -18,7 +28,6 @@ declare class ControllerSqueezeliteMC {
     previous(): any;
     repeat(value: boolean, repeatSingle: boolean): any;
     random(value: boolean): any;
-    onStop(): any;
 }
 export = ControllerSqueezeliteMC;
 //# sourceMappingURL=index.d.ts.map

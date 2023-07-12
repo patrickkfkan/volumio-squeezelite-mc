@@ -314,6 +314,12 @@ class ControllerSqueezeliteMC {
         });
         return defer.promise;
     }
+    getConfigurationFiles() {
+        return ['config.json'];
+    }
+    /**
+     * Plugin lifecycle
+     */
     onVolumioStart() {
         const configFile = __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandRouter, "f").pluginManager.getConfigurationFile(__classPrivateFieldGet(this, _ControllerSqueezeliteMC_context, "f"), 'config.json');
         __classPrivateFieldSet(this, _ControllerSqueezeliteMC_config, new v_conf_1.default(), "f");
@@ -386,8 +392,47 @@ class ControllerSqueezeliteMC {
         });
         return defer.promise;
     }
-    getConfigurationFiles() {
-        return ['config.json'];
+    onStop() {
+        const defer = kew_1.default.defer();
+        __classPrivateFieldSet(this, _ControllerSqueezeliteMC_playerConfig, null, "f");
+        __classPrivateFieldSet(this, _ControllerSqueezeliteMC_commandDispatcher, null, "f");
+        if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playbackTimer, "f")) {
+            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playbackTimer, "f").stop();
+        }
+        // Hack to remove volume change listener
+        const callbacks = __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandRouter, "f").callbacks['volumioupdatevolume'];
+        if (callbacks && Array.isArray(callbacks)) {
+            const cbIndex = callbacks.indexOf(__classPrivateFieldGet(this, _ControllerSqueezeliteMC_volumioSetVolumeCallback, "f"));
+            if (cbIndex >= 0) {
+                callbacks.splice(cbIndex, 1);
+            }
+        }
+        // Hack to remove player config change handler
+        if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfigChangeHandler, "f")) {
+            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandRouter, "f").sharedVars.callbacks.delete('alsa.outputdevice', __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfigChangeHandler, "f"));
+            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandRouter, "f").sharedVars.callbacks.delete('alsa.outputdevicemixer', __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfigChangeHandler, "f"));
+            SqueezeliteMCContext_1.default.getMpdPlugin().config.callbacks.delete('dop', __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfigChangeHandler, "f"));
+            __classPrivateFieldSet(this, _ControllerSqueezeliteMC_playerConfigChangeHandler, null, "f");
+        }
+        if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_proxy, "f") && __classPrivateFieldGet(this, _ControllerSqueezeliteMC_proxy, "f").getStatus() !== Proxy_1.ProxyStatus.Stopped) {
+            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_proxy, "f").stop();
+        }
+        const promises = [
+            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_clearPlayerStatusMonitor).call(this),
+            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_clearPlayerFinder).call(this),
+            (0, System_1.stopSqueezeliteService)()
+        ];
+        SqueezeliteMCContext_1.default.toast('info', SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_STOPPING'));
+        Promise.all(promises).then(() => {
+            SqueezeliteMCContext_1.default.toast('success', SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_STOPPED'));
+            SqueezeliteMCContext_1.default.reset();
+            defer.resolve();
+        })
+            .catch((error) => {
+            SqueezeliteMCContext_1.default.toast('error', SqueezeliteMCContext_1.default.getErrorMessage(SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_ERR_STOP'), error, false));
+            defer.reject(error);
+        });
+        return defer.promise;
     }
     unsetVolatile() {
         SqueezeliteMCContext_1.default.getStateMachine().unSetVolatile();
@@ -410,6 +455,9 @@ class ControllerSqueezeliteMC {
          */
         this.stop();
     }
+    /**
+     * Config save functions
+     */
     configSaveServerCredentials(data = {}) {
         const credentials = {};
         for (const [fieldName, value] of Object.entries(data)) {
@@ -484,6 +532,9 @@ class ControllerSqueezeliteMC {
             __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_revalidatePlayerConfig).call(this);
         }
     }
+    /**
+     * Volumio playback control functions
+     */
     stop() {
         if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandDispatcher, "f")) {
             __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandDispatcher, "f").sendStop();
@@ -549,50 +600,12 @@ class ControllerSqueezeliteMC {
         }
         return kew_1.default.resolve(true);
     }
-    onStop() {
-        const defer = kew_1.default.defer();
-        __classPrivateFieldSet(this, _ControllerSqueezeliteMC_playerConfig, null, "f");
-        __classPrivateFieldSet(this, _ControllerSqueezeliteMC_commandDispatcher, null, "f");
-        if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playbackTimer, "f")) {
-            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playbackTimer, "f").stop();
-        }
-        // Hack to remove volume change listener
-        const callbacks = __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandRouter, "f").callbacks['volumioupdatevolume'];
-        if (callbacks && Array.isArray(callbacks)) {
-            const cbIndex = callbacks.indexOf(__classPrivateFieldGet(this, _ControllerSqueezeliteMC_volumioSetVolumeCallback, "f"));
-            if (cbIndex >= 0) {
-                callbacks.splice(cbIndex, 1);
-            }
-        }
-        // Hack to remove player config change handler
-        if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfigChangeHandler, "f")) {
-            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandRouter, "f").sharedVars.callbacks.delete('alsa.outputdevice', __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfigChangeHandler, "f"));
-            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandRouter, "f").sharedVars.callbacks.delete('alsa.outputdevicemixer', __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfigChangeHandler, "f"));
-            SqueezeliteMCContext_1.default.getMpdPlugin().config.callbacks.delete('dop', __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfigChangeHandler, "f"));
-            __classPrivateFieldSet(this, _ControllerSqueezeliteMC_playerConfigChangeHandler, null, "f");
-        }
-        if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_proxy, "f") && __classPrivateFieldGet(this, _ControllerSqueezeliteMC_proxy, "f").getStatus() !== Proxy_1.ProxyStatus.Stopped) {
-            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_proxy, "f").stop();
-        }
-        const promises = [
-            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_clearPlayerStatusMonitor).call(this),
-            __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_clearPlayerFinder).call(this),
-            (0, System_1.stopSqueezeliteService)()
-        ];
-        SqueezeliteMCContext_1.default.toast('info', SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_STOPPING'));
-        Promise.all(promises).then(() => {
-            SqueezeliteMCContext_1.default.toast('success', SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_STOPPED'));
-            SqueezeliteMCContext_1.default.reset();
-            defer.resolve();
-        })
-            .catch((error) => {
-            SqueezeliteMCContext_1.default.toast('error', SqueezeliteMCContext_1.default.getErrorMessage(SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_ERR_STOP'), error, false));
-            defer.reject(error);
-        });
-        return defer.promise;
-    }
 }
-_ControllerSqueezeliteMC_serviceName = new WeakMap(), _ControllerSqueezeliteMC_context = new WeakMap(), _ControllerSqueezeliteMC_config = new WeakMap(), _ControllerSqueezeliteMC_commandRouter = new WeakMap(), _ControllerSqueezeliteMC_playerRunState = new WeakMap(), _ControllerSqueezeliteMC_playerStatusMonitor = new WeakMap(), _ControllerSqueezeliteMC_playbackTimer = new WeakMap(), _ControllerSqueezeliteMC_lastState = new WeakMap(), _ControllerSqueezeliteMC_volatileCallback = new WeakMap(), _ControllerSqueezeliteMC_volumioSetVolumeCallback = new WeakMap(), _ControllerSqueezeliteMC_commandDispatcher = new WeakMap(), _ControllerSqueezeliteMC_proxy = new WeakMap(), _ControllerSqueezeliteMC_playerFinder = new WeakMap(), _ControllerSqueezeliteMC_volumioVolume = new WeakMap(), _ControllerSqueezeliteMC_playerConfigChangeDelayTimer = new WeakMap(), _ControllerSqueezeliteMC_playerConfigChangeHandler = new WeakMap(), _ControllerSqueezeliteMC_playerConfig = new WeakMap(), _ControllerSqueezeliteMC_previousDoubleClickTimeout = new WeakMap(), _ControllerSqueezeliteMC_instances = new WeakSet(), _ControllerSqueezeliteMC_initAndStartPlayerFinder = async function _ControllerSqueezeliteMC_initAndStartPlayerFinder() {
+_ControllerSqueezeliteMC_serviceName = new WeakMap(), _ControllerSqueezeliteMC_context = new WeakMap(), _ControllerSqueezeliteMC_config = new WeakMap(), _ControllerSqueezeliteMC_commandRouter = new WeakMap(), _ControllerSqueezeliteMC_playerRunState = new WeakMap(), _ControllerSqueezeliteMC_playerStatusMonitor = new WeakMap(), _ControllerSqueezeliteMC_playbackTimer = new WeakMap(), _ControllerSqueezeliteMC_lastState = new WeakMap(), _ControllerSqueezeliteMC_volatileCallback = new WeakMap(), _ControllerSqueezeliteMC_volumioSetVolumeCallback = new WeakMap(), _ControllerSqueezeliteMC_commandDispatcher = new WeakMap(), _ControllerSqueezeliteMC_proxy = new WeakMap(), _ControllerSqueezeliteMC_playerFinder = new WeakMap(), _ControllerSqueezeliteMC_volumioVolume = new WeakMap(), _ControllerSqueezeliteMC_playerConfigChangeDelayTimer = new WeakMap(), _ControllerSqueezeliteMC_playerConfigChangeHandler = new WeakMap(), _ControllerSqueezeliteMC_playerConfig = new WeakMap(), _ControllerSqueezeliteMC_previousDoubleClickTimeout = new WeakMap(), _ControllerSqueezeliteMC_instances = new WeakSet(), _ControllerSqueezeliteMC_initAndStartPlayerFinder = 
+/**
+ * Workflow logic
+ */
+async function _ControllerSqueezeliteMC_initAndStartPlayerFinder() {
     if (!__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerFinder, "f")) {
         __classPrivateFieldSet(this, _ControllerSqueezeliteMC_playerFinder, new PlayerFinder_1.default(), "f");
         __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerFinder, "f").on('found', async (data) => {

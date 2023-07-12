@@ -318,6 +318,14 @@ class ControllerSqueezeliteMC {
     return defer.promise;
   }
 
+  getConfigurationFiles() {
+    return [ 'config.json' ];
+  }
+
+  /**
+   * Plugin lifecycle
+   */
+
   onVolumioStart() {
     const configFile = this.#commandRouter.pluginManager.getConfigurationFile(this.#context, 'config.json');
     this.#config = new vconf();
@@ -395,6 +403,61 @@ class ControllerSqueezeliteMC {
 
     return defer.promise;
   }
+
+  onStop() {
+    const defer = libQ.defer();
+
+    this.#playerConfig = null;
+    this.#commandDispatcher = null;
+    if (this.#playbackTimer) {
+      this.#playbackTimer.stop();
+    }
+
+    // Hack to remove volume change listener
+    const callbacks = this.#commandRouter.callbacks['volumioupdatevolume'];
+    if (callbacks && Array.isArray(callbacks)) {
+      const cbIndex = callbacks.indexOf(this.#volumioSetVolumeCallback);
+      if (cbIndex >= 0) {
+        callbacks.splice(cbIndex, 1);
+      }
+    }
+
+    // Hack to remove player config change handler
+    if (this.#playerConfigChangeHandler) {
+      this.#commandRouter.sharedVars.callbacks.delete('alsa.outputdevice', this.#playerConfigChangeHandler);
+      this.#commandRouter.sharedVars.callbacks.delete('alsa.outputdevicemixer', this.#playerConfigChangeHandler);
+      sm.getMpdPlugin().config.callbacks.delete('dop', this.#playerConfigChangeHandler);
+      this.#playerConfigChangeHandler = null;
+    }
+
+    if (this.#proxy && this.#proxy.getStatus() !== ProxyStatus.Stopped) {
+      this.#proxy.stop();
+    }
+
+    const promises = [
+      this.#clearPlayerStatusMonitor(),
+      this.#clearPlayerFinder(),
+      stopSqueezeliteService()
+    ];
+
+    sm.toast('info', sm.getI18n('SQUEEZELITE_MC_STOPPING'));
+
+    Promise.all(promises).then(() => {
+      sm.toast('success', sm.getI18n('SQUEEZELITE_MC_STOPPED'));
+      sm.reset();
+      defer.resolve();
+    })
+      .catch((error) => {
+        sm.toast('error', sm.getErrorMessage(sm.getI18n('SQUEEZELITE_MC_ERR_STOP'), error, false));
+        defer.reject(error);
+      });
+
+    return defer.promise;
+  }
+
+  /**
+   * Workflow logic
+   */
 
   async #initAndStartPlayerFinder() {
     if (!this.#playerFinder) {
@@ -711,10 +774,6 @@ class ControllerSqueezeliteMC {
     sm.getStateMachine().setConsumeUpdateService(undefined);
   }
 
-  getConfigurationFiles() {
-    return [ 'config.json' ];
-  }
-
   unsetVolatile() {
     sm.getStateMachine().unSetVolatile();
   }
@@ -957,6 +1016,33 @@ class ControllerSqueezeliteMC {
     }, 1500);
   }
 
+  #resolveOnStatusMode(mode: string, timeout = 2000) {
+    if (!this.#playerStatusMonitor) {
+      return libQ.resolve(true);
+    }
+    const monitor = this.#playerStatusMonitor;
+    const defer = libQ.defer();
+    const updateHandler = (data: any) => {
+      if (data.status.mode === mode) {
+        monitor.off('update', updateHandler);
+        clearTimeout(updateTimeout);
+        defer.resolve();
+      }
+    };
+    const updateTimeout = setTimeout(() => {
+      monitor.off('update', updateHandler);
+      defer.resolve();
+    }, timeout);
+
+    monitor.on('update', updateHandler);
+
+    return defer.promise;
+  }
+
+  /**
+   * Config save functions
+   */
+
   configSaveServerCredentials(data: Record<string, string> = {}) {
     const credentials: ServerCredentials = {};
     for (const [ fieldName, value ] of Object.entries(data)) {
@@ -1038,28 +1124,9 @@ class ControllerSqueezeliteMC {
     }
   }
 
-  #resolveOnStatusMode(mode: string, timeout = 2000) {
-    if (!this.#playerStatusMonitor) {
-      return libQ.resolve(true);
-    }
-    const monitor = this.#playerStatusMonitor;
-    const defer = libQ.defer();
-    const updateHandler = (data: any) => {
-      if (data.status.mode === mode) {
-        monitor.off('update', updateHandler);
-        clearTimeout(updateTimeout);
-        defer.resolve();
-      }
-    };
-    const updateTimeout = setTimeout(() => {
-      monitor.off('update', updateHandler);
-      defer.resolve();
-    }, timeout);
-
-    monitor.on('update', updateHandler);
-
-    return defer.promise;
-  }
+  /**
+   * Volumio playback control functions
+   */
 
   stop() {
     if (this.#commandDispatcher) {
@@ -1135,57 +1202,6 @@ class ControllerSqueezeliteMC {
       this.#commandDispatcher.sendShuffle(value ? LMS_SHUFFLE_BY_SONG : LMS_SHUFFLE_OFF);
     }
     return libQ.resolve(true);
-  }
-
-  onStop() {
-    const defer = libQ.defer();
-
-    this.#playerConfig = null;
-    this.#commandDispatcher = null;
-    if (this.#playbackTimer) {
-      this.#playbackTimer.stop();
-    }
-
-    // Hack to remove volume change listener
-    const callbacks = this.#commandRouter.callbacks['volumioupdatevolume'];
-    if (callbacks && Array.isArray(callbacks)) {
-      const cbIndex = callbacks.indexOf(this.#volumioSetVolumeCallback);
-      if (cbIndex >= 0) {
-        callbacks.splice(cbIndex, 1);
-      }
-    }
-
-    // Hack to remove player config change handler
-    if (this.#playerConfigChangeHandler) {
-      this.#commandRouter.sharedVars.callbacks.delete('alsa.outputdevice', this.#playerConfigChangeHandler);
-      this.#commandRouter.sharedVars.callbacks.delete('alsa.outputdevicemixer', this.#playerConfigChangeHandler);
-      sm.getMpdPlugin().config.callbacks.delete('dop', this.#playerConfigChangeHandler);
-      this.#playerConfigChangeHandler = null;
-    }
-
-    if (this.#proxy && this.#proxy.getStatus() !== ProxyStatus.Stopped) {
-      this.#proxy.stop();
-    }
-
-    const promises = [
-      this.#clearPlayerStatusMonitor(),
-      this.#clearPlayerFinder(),
-      stopSqueezeliteService()
-    ];
-
-    sm.toast('info', sm.getI18n('SQUEEZELITE_MC_STOPPING'));
-
-    Promise.all(promises).then(() => {
-      sm.toast('success', sm.getI18n('SQUEEZELITE_MC_STOPPED'));
-      sm.reset();
-      defer.resolve();
-    })
-      .catch((error) => {
-        sm.toast('error', sm.getErrorMessage(sm.getI18n('SQUEEZELITE_MC_ERR_STOP'), error, false));
-        defer.reject(error);
-      });
-
-    return defer.promise;
   }
 }
 
