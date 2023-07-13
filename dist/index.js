@@ -174,7 +174,7 @@ class ControllerSqueezeliteMC {
                     'message': 'callMethod',
                     'data': {
                         'endpoint': 'music_service/squeezelite_mc',
-                        'method': '#revalidatePlayerConfig',
+                        'method': 'configStartSqueezelite',
                         'data': JSON.stringify({
                             force: true,
                             refreshUIConf: true
@@ -456,8 +456,20 @@ class ControllerSqueezeliteMC {
         this.stop();
     }
     /**
-     * Config save functions
+     * Config functions
      */
+    configStartSqueezelite(data) {
+        let opts;
+        try {
+            opts = (typeof data === 'string') ? JSON.parse(data) :
+                (typeof data === 'object') ? data : undefined;
+        }
+        catch (error) {
+            SqueezeliteMCContext_1.default.getLogger().warn(`[squeezelite_mc] configStartSqueezelite() failed to parse opts ${data}`);
+            opts = undefined;
+        }
+        __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_revalidatePlayerConfig).call(this, opts);
+    }
     configSaveServerCredentials(data = {}) {
         const credentials = {};
         for (const [fieldName, value] of Object.entries(data)) {
@@ -994,8 +1006,7 @@ async function _ControllerSqueezeliteMC_initAndStartPlayerFinder() {
     catch (error) {
         return 0;
     }
-}, _ControllerSqueezeliteMC_revalidatePlayerConfig = async function _ControllerSqueezeliteMC_revalidatePlayerConfig(options = {}) {
-    const opts = (typeof options === 'string') ? JSON.parse(options) : options;
+}, _ControllerSqueezeliteMC_revalidatePlayerConfig = async function _ControllerSqueezeliteMC_revalidatePlayerConfig(options) {
     let config;
     try {
         SqueezeliteMCContext_1.default.toast('info', SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_REVALIDATING'));
@@ -1015,7 +1026,7 @@ async function _ControllerSqueezeliteMC_initAndStartPlayerFinder() {
         return;
     }
     // Check if config changed
-    if (opts.force ||
+    if (options?.force ||
         !__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfig, "f") ||
         __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfig, "f").invalidated ||
         (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfig, "f").playerName !== config.playerName ||
@@ -1029,7 +1040,7 @@ async function _ControllerSqueezeliteMC_initAndStartPlayerFinder() {
             await (0, System_1.initSqueezeliteService)(config);
             SqueezeliteMCContext_1.default.toast('success', SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_RESTARTED_CONFIG'));
             __classPrivateFieldSet(this, _ControllerSqueezeliteMC_playerRunState, Player_1.PlayerRunState.Normal, "f");
-            if (opts.refreshUIConf) {
+            if (options?.refreshUIConf) {
                 SqueezeliteMCContext_1.default.refreshUIConfig();
             }
         }
@@ -1044,7 +1055,7 @@ async function _ControllerSqueezeliteMC_initAndStartPlayerFinder() {
             if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfig, "f")) {
                 __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerConfig, "f").invalidated = true;
             }
-            if (opts.refreshUIConf) {
+            if (options?.refreshUIConf) {
                 SqueezeliteMCContext_1.default.refreshUIConfig();
             }
         }

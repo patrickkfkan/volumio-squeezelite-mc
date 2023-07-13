@@ -12,8 +12,9 @@ declare class ControllerSqueezeliteMC {
     unsetVolatile(): void;
     onUnsetVolatile(): void;
     /**
-     * Config save functions
+     * Config functions
      */
+    configStartSqueezelite(data: any): void;
     configSaveServerCredentials(data?: Record<string, string>): void;
     configSaveSqueezeliteSettings(data: any): void;
     /**

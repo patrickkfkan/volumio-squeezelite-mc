@@ -171,7 +171,7 @@ class ControllerSqueezeliteMC {
             'message': 'callMethod',
             'data': {
               'endpoint': 'music_service/squeezelite_mc',
-              'method': '#revalidatePlayerConfig',
+              'method': 'configStartSqueezelite',
               'data': JSON.stringify({
                 force: true,
                 refreshUIConf: true
@@ -943,8 +943,7 @@ class ControllerSqueezeliteMC {
     }
   }
 
-  async #revalidatePlayerConfig(options = {}) {
-    const opts = (typeof options === 'string') ? JSON.parse(options) : options;
+  async #revalidatePlayerConfig(options?: { force?: boolean; refreshUIConf?: boolean }) {
     let config: PlayerConfig;
     try {
       sm.toast('info', sm.getI18n('SQUEEZELITE_MC_REVALIDATING'));
@@ -966,7 +965,7 @@ class ControllerSqueezeliteMC {
     }
     // Check if config changed
     if (
-      opts.force ||
+      options?.force ||
       !this.#playerConfig ||
       this.#playerConfig.invalidated ||
       (this.#playerConfig.playerName !== config.playerName ||
@@ -982,7 +981,7 @@ class ControllerSqueezeliteMC {
         await initSqueezeliteService(config);
         sm.toast('success', sm.getI18n('SQUEEZELITE_MC_RESTARTED_CONFIG'));
         this.#playerRunState = PlayerRunState.Normal;
-        if (opts.refreshUIConf) {
+        if (options?.refreshUIConf) {
           sm.refreshUIConfig();
         }
       }
@@ -997,7 +996,7 @@ class ControllerSqueezeliteMC {
         if (this.#playerConfig) {
           this.#playerConfig.invalidated = true;
         }
-        if (opts.refreshUIConf) {
+        if (options?.refreshUIConf) {
           sm.refreshUIConfig();
         }
       }
@@ -1040,8 +1039,21 @@ class ControllerSqueezeliteMC {
   }
 
   /**
-   * Config save functions
+   * Config functions
    */
+
+  configStartSqueezelite(data: any) {
+    let opts;
+    try {
+      opts = (typeof data === 'string') ? JSON.parse(data) :
+        (typeof data === 'object') ? data : undefined;
+    }
+    catch (error) {
+      sm.getLogger().warn(`[squeezelite_mc] configStartSqueezelite() failed to parse opts ${data}`);
+      opts = undefined;
+    }
+    this.#revalidatePlayerConfig(opts);
+  }
 
   configSaveServerCredentials(data: Record<string, string> = {}) {
     const credentials: ServerCredentials = {};
