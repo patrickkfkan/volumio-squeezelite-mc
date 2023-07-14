@@ -493,12 +493,14 @@ class ControllerSqueezeliteMC {
           await this.#commandDispatcher.sendVolume(this.#volumioVolume);
         }
 
-        const playerConfigType = sm.getConfigValue('playerConfigType');
-        if (playerConfigType === 'basic' && this.#playerStartupParams?.type === 'basic') {
-          // Disable / enable Squeezelite's digital volume control based on mixer type
-          const digitalVolumeControl = this.#playerStartupParams.mixerType === 'None' ? 0 : 1;
-          await this.#commandDispatcher.sendPref('digitalVolumeControl', digitalVolumeControl);
-        }
+        /**
+         * Set LMS Player Settings -> Audio -> Volume Control to 'Output level is fixed at 100%'.
+         * This is to avoid Squeezelite from zero-ing out the volume on pause, which obviously
+         * causes problems with native DSD playback. Also, after Squeezelite mutes the volume on pause,
+         * playing from another Volumio source will not restore the volume to its previous level (i.e.
+         * it stays muted).
+         */
+        await this.#commandDispatcher.sendPref('digitalVolumeControl', 0);
 
         await this.#clearPlayerStatusMonitor(); // Ensure there is only one monitor instance
         const playerStatusMonitor = new PlayerStatusMonitor(player, serverCredentials);

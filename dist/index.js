@@ -659,12 +659,14 @@ async function _ControllerSqueezeliteMC_initAndStartPlayerFinder() {
             if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_volumioVolume, "f") !== undefined) {
                 await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandDispatcher, "f").sendVolume(__classPrivateFieldGet(this, _ControllerSqueezeliteMC_volumioVolume, "f"));
             }
-            const playerConfigType = SqueezeliteMCContext_1.default.getConfigValue('playerConfigType');
-            if (playerConfigType === 'basic' && __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerStartupParams, "f")?.type === 'basic') {
-                // Disable / enable Squeezelite's digital volume control based on mixer type
-                const digitalVolumeControl = __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerStartupParams, "f").mixerType === 'None' ? 0 : 1;
-                await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandDispatcher, "f").sendPref('digitalVolumeControl', digitalVolumeControl);
-            }
+            /**
+             * Set LMS Player Settings -> Audio -> Volume Control to 'Output level is fixed at 100%'.
+             * This is to avoid Squeezelite from zero-ing out the volume on pause, which obviously
+             * causes problems with native DSD playback. Also, after Squeezelite mutes the volume on pause,
+             * playing from another Volumio source will not restore the volume to its previous level (i.e.
+             * it stays muted).
+             */
+            await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandDispatcher, "f").sendPref('digitalVolumeControl', 0);
             await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_clearPlayerStatusMonitor).call(this); // Ensure there is only one monitor instance
             const playerStatusMonitor = new PlayerStatusMonitor_1.default(player, serverCredentials);
             __classPrivateFieldSet(this, _ControllerSqueezeliteMC_playerStatusMonitor, playerStatusMonitor, "f");
