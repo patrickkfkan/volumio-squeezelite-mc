@@ -4,6 +4,17 @@ import libQ from 'kew';
 
 import os from 'os';
 import Server, { ServerCredentials } from './types/Server';
+import { BasicPlayerStartupParams } from './types/Player';
+import { SQUEEZELITE_LOG_FILE } from './System';
+
+const DSD_FORMAT_TO_SQUEEZELITE_OPT: Record<string, string> = {
+  'dop': 'dop',
+  'DSD_U8': 'u8',
+  'DSD_U16_LE': 'u16le',
+  'DSD_U16_BE': 'u16be',
+  'DSD_U32_LE': 'u32le',
+  'DSD_U32_BE': 'u32be'
+};
 
 export interface ServerConnectParams {
   host?: string;
@@ -108,14 +119,28 @@ export class PlaybackTimer {
   getSeek() {
     return this.#seek;
   }
-
 }
 
-module.exports = {
-  getNetworkInterfaces,
-  encodeBase64,
-  getServerConnectParams,
-  jsPromiseToKew,
-  kewToJSPromise,
-  PlaybackTimer
-};
+export function basicPlayerStartupParamsToSqueezeliteOpts(params: BasicPlayerStartupParams) {
+  // Returns:
+  // -o squeezelite -C 1 -n {playerName} -D 3:{dsdFormat} -V {mixer} -f ${logFile}
+  const parts = [
+    '-o squeezelite',
+    '-C 1'
+  ];
+  if (params.playerName) {
+    parts.push(`-n "${params.playerName}"`);
+  }
+  if (params.dsdFormat) {
+    const dsdFormat = DSD_FORMAT_TO_SQUEEZELITE_OPT[params.dsdFormat];
+    if (dsdFormat) {
+      parts.push(`-D 3:${dsdFormat}`);
+    }
+  }
+  if (params.mixer) {
+    parts.push(`-V "${params.mixer}"`);
+  }
+  parts.push(`-f ${SQUEEZELITE_LOG_FILE}`);
+
+  return parts.join(' ');
+}

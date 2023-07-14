@@ -84,8 +84,12 @@ class SqueezeliteMCContext {
     return this.#pluginConfig.has(key);
   }
 
-  getConfigValue<T extends PluginConfigKey>(key: T): PluginConfigValue<T> {
+  getConfigValue<T extends PluginConfigKey>(key: T, getDefault = false): PluginConfigValue<T> {
     const schema = PLUGIN_CONFIG_SCHEMA[key];
+    if (getDefault) {
+      return schema.defaultValue;
+    }
+
     if (this.#pluginConfig.has(key)) {
       const val = this.#pluginConfig.get(key);
       if (schema.json) {

@@ -81,8 +81,11 @@ class SqueezeliteMCContext {
     hasConfigKey(key) {
         return __classPrivateFieldGet(this, _SqueezeliteMCContext_pluginConfig, "f").has(key);
     }
-    getConfigValue(key) {
+    getConfigValue(key, getDefault = false) {
         const schema = Config_1.PLUGIN_CONFIG_SCHEMA[key];
+        if (getDefault) {
+            return schema.defaultValue;
+        }
         if (__classPrivateFieldGet(this, _SqueezeliteMCContext_pluginConfig, "f").has(key)) {
             const val = __classPrivateFieldGet(this, _SqueezeliteMCContext_pluginConfig, "f").get(key);
             if (schema.json) {

@@ -1,4 +1,5 @@
 import Server, { ServerCredentials } from './types/Server';
+import { BasicPlayerStartupParams } from './types/Player';
 export interface ServerConnectParams {
     host?: string;
     port?: string;
@@ -23,4 +24,5 @@ export declare class PlaybackTimer {
     stop(): void;
     getSeek(): number;
 }
+export declare function basicPlayerStartupParamsToSqueezeliteOpts(params: BasicPlayerStartupParams): string;
 //# sourceMappingURL=Util.d.ts.map

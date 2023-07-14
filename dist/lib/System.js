@@ -26,24 +26,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAlsaFormats = exports.getSqueezeliteServiceStatus = exports.stopSqueezeliteService = exports.initSqueezeliteService = exports.SystemErrorCode = exports.SystemError = void 0;
+exports.getAlsaFormats = exports.getSqueezeliteServiceStatus = exports.stopSqueezeliteService = exports.initSqueezeliteService = exports.SystemErrorCode = exports.SystemError = exports.SQUEEZELITE_LOG_FILE = void 0;
 const path_1 = __importDefault(require("path"));
 const SqueezeliteMCContext_1 = __importDefault(require("./SqueezeliteMCContext"));
 const child_process_1 = require("child_process");
 const fs = __importStar(require("fs"));
-const DSD_FORMAT_TO_SQUEEZELITE_OPT = {
-    'dop': 'dop',
-    'DSD_U8': 'u8',
-    'DSD_U16_LE': 'u16le',
-    'DSD_U16_BE': 'u16be',
-    'DSD_U32_LE': 'u32le',
-    'DSD_U32_BE': 'u32be'
-};
+const Util_1 = require("./Util");
 const SYSTEMD_TEMPLATE_FILE = `${path_1.default.resolve(__dirname)}/../templates/systemd/squeezelite.service.template`;
 const SYSTEMD_SERVICE_FILE = '/etc/systemd/system/squeezelite.service';
 const ALSA_CONF_TEMPLATE_FILE = `${path_1.default.resolve(__dirname)}/../templates/alsa/100-squeezelite.conf.template`;
 const ALSA_CONF_FILE = '/etc/alsa/conf.d/100-squeezelite.conf';
-const SQUEEZELITE_LOG_FILE = '/tmp/squeezelite.log';
+exports.SQUEEZELITE_LOG_FILE = '/tmp/squeezelite.log';
 class SystemError extends Error {
 }
 exports.SystemError = SystemError;
@@ -73,7 +66,7 @@ async function restartSqueezeliteService() {
     const status = await getSqueezeliteServiceStatus();
     const stopPromise = status === 'active' ? stopSqueezeliteService() : Promise.resolve();
     await stopPromise;
-    const rmLogPromise = fs.existsSync(SQUEEZELITE_LOG_FILE) ? execCommand(`rm ${SQUEEZELITE_LOG_FILE}`, true) : Promise.resolve();
+    const rmLogPromise = fs.existsSync(exports.SQUEEZELITE_LOG_FILE) ? execCommand(`rm ${exports.SQUEEZELITE_LOG_FILE}`, true) : Promise.resolve();
     await rmLogPromise;
     await systemctl('start', 'squeezelite');
     try {
@@ -82,8 +75,8 @@ async function restartSqueezeliteService() {
     catch (error) {
         // Look for recognizable error in log file
         const throwErr = new SystemError();
-        if (fs.existsSync(SQUEEZELITE_LOG_FILE)) {
-            const log = fs.readFileSync(SQUEEZELITE_LOG_FILE).toString();
+        if (fs.existsSync(exports.SQUEEZELITE_LOG_FILE)) {
+            const log = fs.readFileSync(exports.SQUEEZELITE_LOG_FILE).toString();
             if (log.indexOf('Device or resource busy') >= 0) {
                 throwErr.code = SystemErrorCode.DeviceBusy;
             }
@@ -127,33 +120,30 @@ function resolveOnSqueezeliteServiceStatusMatch(status, matchConsecutive = 1, re
         startCheckTimer(resolve, reject);
     });
 }
-async function updateSqueezeliteService(config) {
+async function updateSqueezeliteService(params) {
+    const startupOpts = params.type === 'basic' ? (0, Util_1.basicPlayerStartupParamsToSqueezeliteOpts)(params) : params.startupOptions;
     const template = fs.readFileSync(SYSTEMD_TEMPLATE_FILE).toString();
-    const dsdFormat = config.dsdFormat ? DSD_FORMAT_TO_SQUEEZELITE_OPT[config.dsdFormat] : null;
-    /* eslint-disable no-template-curly-in-string */
-    const out = template
-        .replace('${PLAYER_NAME_OPT}', config.playerName ? `-n ${config.playerName}` : '')
-        .replace('${VOLUME_CONTROL_OPT}', config.mixer ? `-V ${config.mixer}` : '')
-        .replace('${DSD_OPT}', dsdFormat ? `-D 3:${dsdFormat}` : '')
-        .replace('${LOG_FILE}', SQUEEZELITE_LOG_FILE);
-    /* eslint-enable no-template-curly-in-string */
+    /* eslint-disable-next-line no-template-curly-in-string */
+    const out = template.replace('${STARTUP_OPTS}', startupOpts);
     fs.writeFileSync(`${SYSTEMD_TEMPLATE_FILE}.out`, out);
     const cpCmd = `cp ${SYSTEMD_TEMPLATE_FILE}.out ${SYSTEMD_SERVICE_FILE}`;
     await execCommand(cpCmd, true);
     return true;
 }
-async function updateAlsaConf(config) {
+async function updateAlsaConf(params) {
     const template = fs.readFileSync(ALSA_CONF_TEMPLATE_FILE).toString();
     // eslint-disable-next-line no-template-curly-in-string
-    const out = template.replace('${CARD}', config.card);
+    const out = template.replace('${CARD}', params.card);
     fs.writeFileSync(`${ALSA_CONF_TEMPLATE_FILE}.out`, out);
     const cpCmd = `cp ${ALSA_CONF_TEMPLATE_FILE}.out ${ALSA_CONF_FILE}`;
     await execCommand(cpCmd, true);
     return true;
 }
-async function initSqueezeliteService(config) {
-    await updateAlsaConf(config);
-    await updateSqueezeliteService(config);
+async function initSqueezeliteService(params) {
+    if (params.type === 'basic') {
+        await updateAlsaConf(params);
+    }
+    await updateSqueezeliteService(params);
     await systemctl('daemon-reload');
     return restartSqueezeliteService();
 }

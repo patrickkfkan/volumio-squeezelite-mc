@@ -8,13 +8,20 @@ interface Player {
   server: Server
 }
 
-export interface PlayerConfig {
+export type PlayerStartupParams = BasicPlayerStartupParams | ManualPlayerStartupParams;
+
+export interface BasicPlayerStartupParams {
+  type: 'basic';
   playerName: string;
   card: string;
   mixerType: string;
   mixer: string | null;
   dsdFormat: string | null;
-  invalidated: boolean;
+}
+
+export interface ManualPlayerStartupParams {
+  type: 'manual';
+  startupOptions: string;
 }
 
 export interface PlayerStatus {

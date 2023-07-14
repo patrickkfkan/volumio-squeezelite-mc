@@ -15,11 +15,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _PlaybackTimer_seek, _PlaybackTimer_timer;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PlaybackTimer = exports.kewToJSPromise = exports.jsPromiseToKew = exports.getServerConnectParams = exports.encodeBase64 = exports.getNetworkInterfaces = void 0;
+exports.basicPlayerStartupParamsToSqueezeliteOpts = exports.PlaybackTimer = exports.kewToJSPromise = exports.jsPromiseToKew = exports.getServerConnectParams = exports.encodeBase64 = exports.getNetworkInterfaces = void 0;
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 const kew_1 = __importDefault(require("kew"));
 const os_1 = __importDefault(require("os"));
+const System_1 = require("./System");
+const DSD_FORMAT_TO_SQUEEZELITE_OPT = {
+    'dop': 'dop',
+    'DSD_U8': 'u8',
+    'DSD_U16_LE': 'u16le',
+    'DSD_U16_BE': 'u16be',
+    'DSD_U32_LE': 'u32le',
+    'DSD_U32_BE': 'u32be'
+};
 function getNetworkInterfaces() {
     const result = {};
     for (const [ifName, addresses] of Object.entries(os_1.default.networkInterfaces())) {
@@ -105,12 +114,27 @@ class PlaybackTimer {
 }
 exports.PlaybackTimer = PlaybackTimer;
 _PlaybackTimer_seek = new WeakMap(), _PlaybackTimer_timer = new WeakMap();
-module.exports = {
-    getNetworkInterfaces,
-    encodeBase64,
-    getServerConnectParams,
-    jsPromiseToKew,
-    kewToJSPromise,
-    PlaybackTimer
-};
+function basicPlayerStartupParamsToSqueezeliteOpts(params) {
+    // Returns:
+    // -o squeezelite -C 1 -n {playerName} -D 3:{dsdFormat} -V {mixer} -f ${logFile}
+    const parts = [
+        '-o squeezelite',
+        '-C 1'
+    ];
+    if (params.playerName) {
+        parts.push(`-n "${params.playerName}"`);
+    }
+    if (params.dsdFormat) {
+        const dsdFormat = DSD_FORMAT_TO_SQUEEZELITE_OPT[params.dsdFormat];
+        if (dsdFormat) {
+            parts.push(`-D 3:${dsdFormat}`);
+        }
+    }
+    if (params.mixer) {
+        parts.push(`-V "${params.mixer}"`);
+    }
+    parts.push(`-f ${System_1.SQUEEZELITE_LOG_FILE}`);
+    return parts.join(' ');
+}
+exports.basicPlayerStartupParamsToSqueezeliteOpts = basicPlayerStartupParamsToSqueezeliteOpts;
 //# sourceMappingURL=Util.js.map

@@ -15,7 +15,7 @@ declare class SqueezeliteMCContext {
     getLogger(): winston.Logger;
     getErrorMessage(message: string, error: any, stack?: boolean): string;
     hasConfigKey<T extends PluginConfigKey>(key: T): boolean;
-    getConfigValue<T extends PluginConfigKey>(key: T): PluginConfigValue<T>;
+    getConfigValue<T extends PluginConfigKey>(key: T, getDefault?: boolean): PluginConfigValue<T>;
     deleteConfigValue(key: string): void;
     setConfigValue<T extends PluginConfigKey>(key: T, value: PluginConfigValue<T>): void;
     getAlbumArtPlugin(): any;

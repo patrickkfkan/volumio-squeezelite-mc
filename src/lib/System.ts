@@ -2,22 +2,15 @@ import path from 'path';
 import sm from './SqueezeliteMCContext';
 import { exec } from 'child_process';
 import * as fs from 'fs';
-import { PlayerConfig } from './types/Player';
-
-const DSD_FORMAT_TO_SQUEEZELITE_OPT: Record<string, string> = {
-  'dop': 'dop',
-  'DSD_U8': 'u8',
-  'DSD_U16_LE': 'u16le',
-  'DSD_U16_BE': 'u16be',
-  'DSD_U32_LE': 'u32le',
-  'DSD_U32_BE': 'u32be'
-};
+import { BasicPlayerStartupParams, PlayerStartupParams } from './types/Player';
+import { basicPlayerStartupParamsToSqueezeliteOpts } from './Util';
 
 const SYSTEMD_TEMPLATE_FILE = `${path.resolve(__dirname)}/../templates/systemd/squeezelite.service.template`;
 const SYSTEMD_SERVICE_FILE = '/etc/systemd/system/squeezelite.service';
 const ALSA_CONF_TEMPLATE_FILE = `${path.resolve(__dirname)}/../templates/alsa/100-squeezelite.conf.template`;
 const ALSA_CONF_FILE = '/etc/alsa/conf.d/100-squeezelite.conf';
-const SQUEEZELITE_LOG_FILE = '/tmp/squeezelite.log';
+
+export const SQUEEZELITE_LOG_FILE = '/tmp/squeezelite.log';
 
 export class SystemError extends Error {
   code?: SystemErrorCode;
@@ -110,35 +103,32 @@ function resolveOnSqueezeliteServiceStatusMatch(status: string | string[], match
   });
 }
 
-async function updateSqueezeliteService(config: PlayerConfig) {
+async function updateSqueezeliteService(params: PlayerStartupParams) {
+  const startupOpts = params.type === 'basic' ? basicPlayerStartupParamsToSqueezeliteOpts(params) : params.startupOptions;
   const template = fs.readFileSync(SYSTEMD_TEMPLATE_FILE).toString();
-  const dsdFormat = config.dsdFormat ? DSD_FORMAT_TO_SQUEEZELITE_OPT[config.dsdFormat] : null;
-  /* eslint-disable no-template-curly-in-string */
-  const out = template
-    .replace('${PLAYER_NAME_OPT}', config.playerName ? `-n ${config.playerName}` : '')
-    .replace('${VOLUME_CONTROL_OPT}', config.mixer ? `-V ${config.mixer}` : '')
-    .replace('${DSD_OPT}', dsdFormat ? `-D 3:${dsdFormat}` : '')
-    .replace('${LOG_FILE}', SQUEEZELITE_LOG_FILE);
-  /* eslint-enable no-template-curly-in-string */
+  /* eslint-disable-next-line no-template-curly-in-string */
+  const out = template.replace('${STARTUP_OPTS}', startupOpts);
   fs.writeFileSync(`${SYSTEMD_TEMPLATE_FILE}.out`, out);
   const cpCmd = `cp ${SYSTEMD_TEMPLATE_FILE}.out ${SYSTEMD_SERVICE_FILE}`;
   await execCommand(cpCmd, true);
   return true;
 }
 
-async function updateAlsaConf(config: PlayerConfig) {
+async function updateAlsaConf(params: BasicPlayerStartupParams) {
   const template = fs.readFileSync(ALSA_CONF_TEMPLATE_FILE).toString();
   // eslint-disable-next-line no-template-curly-in-string
-  const out = template.replace('${CARD}', config.card);
+  const out = template.replace('${CARD}', params.card);
   fs.writeFileSync(`${ALSA_CONF_TEMPLATE_FILE}.out`, out);
   const cpCmd = `cp ${ALSA_CONF_TEMPLATE_FILE}.out ${ALSA_CONF_FILE}`;
   await execCommand(cpCmd, true);
   return true;
 }
 
-export async function initSqueezeliteService(config: PlayerConfig) {
-  await updateAlsaConf(config);
-  await updateSqueezeliteService(config);
+export async function initSqueezeliteService(params: PlayerStartupParams) {
+  if (params.type === 'basic') {
+    await updateAlsaConf(params);
+  }
+  await updateSqueezeliteService(params);
   await systemctl('daemon-reload');
   return restartSqueezeliteService();
 }

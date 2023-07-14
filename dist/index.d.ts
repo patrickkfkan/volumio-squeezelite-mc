@@ -14,9 +14,14 @@ declare class ControllerSqueezeliteMC {
     /**
      * Config functions
      */
-    configStartSqueezelite(data: any): void;
+    configStartSqueezelite(data: {
+        force?: boolean;
+    }): void;
     configSaveServerCredentials(data?: Record<string, string>): void;
-    configSaveSqueezeliteSettings(data: any): void;
+    configSwitchToBasicSqueezeliteSettings(): void;
+    configSwitchToManualSqueezeliteSettings(): void;
+    configSaveBasicSqueezeliteSettings(data: any): void;
+    configSaveManualSqueezeliteSettings(data: any): void;
     /**
      * Volumio playback control functions
      */

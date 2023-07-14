@@ -6,10 +6,18 @@ export interface PluginConfigSchemaEntry<T, U = false> {
     defaultValue: T;
     json: U;
 }
+export interface BasicPlayerConfig {
+    playerNameType: 'hostname' | 'custom';
+    playerName: string;
+    dsdPlayback: DSDPlayback;
+}
+export interface ManualPlayerConfig {
+    startupOptions: string;
+}
 export interface PluginConfigSchema {
-    playerNameType: PluginConfigSchemaEntry<'hostname' | 'custom'>;
-    playerName: PluginConfigSchemaEntry<string>;
-    dsdPlayback: PluginConfigSchemaEntry<DSDPlayback>;
+    playerConfigType: PluginConfigSchemaEntry<'basic' | 'manual'>;
+    basicPlayerConfig: PluginConfigSchemaEntry<BasicPlayerConfig, true>;
+    manualPlayerConfig: PluginConfigSchemaEntry<ManualPlayerConfig, true>;
     serverCredentials: PluginConfigSchemaEntry<ServerCredentials, true>;
 }
 export declare const PLUGIN_CONFIG_SCHEMA: PluginConfigSchema;
