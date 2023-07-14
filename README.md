@@ -39,6 +39,11 @@ In the plugin settings, you can configure the following:
 
 ## Changelog
 
+1.0.0
+- Migrate to TypeScript
+- Add option to specify full Squeezelite startup options
+- Fix Squeezelite not rediscovered after LMS restarts due to change in LMS settings
+
 0.1.2
 - Fix sync group status updates
 - Fix artist name sometimes empty even if track data has it
