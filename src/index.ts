@@ -17,7 +17,7 @@ import PlayerFinder, { PlayerFinderStatus } from './lib/PlayerFinder';
 import equal from 'fast-deep-equal';
 import { ServerCredentials } from './lib/types/Server';
 import Player, { BasicPlayerStartupParams, PlayerRunState, PlayerStartupParams, PlayerStatus } from './lib/types/Player';
-import { BasicPlayerConfig, ManualPlayerConfig } from './lib/Config';
+import { BasicPlayerConfig, ManualPlayerConfig, PlayerConfig } from './lib/Config';
 
 interface VolumioState {
   service: string;
@@ -140,8 +140,8 @@ class ControllerSqueezeliteMC {
     const squeezeliteManualUIConf = uiconf.sections[2];
     const serverCredentialsUIConf = uiconf.sections[3];
 
-    const playerConfigType = sm.getConfigValue('playerConfigType');
-    if (playerConfigType === 'basic') {
+    const playerConfig = this.#getPlayerConfig();
+    if (playerConfig.type === 'basic') {
       uiconf.sections.splice(2, 1);
     }
     else { // `manual` playerConfigType
@@ -212,9 +212,8 @@ class ControllerSqueezeliteMC {
     /**
      * Squeezelite conf
      */
-    if (playerConfigType === 'basic') {
-      const basicPlayerConfig = sm.getConfigValue('basicPlayerConfig');
-      const { playerNameType, playerName, dsdPlayback } = basicPlayerConfig;
+    if (playerConfig.type === 'basic') {
+      const { playerNameType, playerName, dsdPlayback, fadeOnPauseResume } = playerConfig;
       // Player name
       squeezeliteBasicUIConf.content[1].value = {
         value: playerNameType
@@ -257,17 +256,19 @@ class ControllerSqueezeliteMC {
         default: // 'auto'
           squeezeliteBasicUIConf.content[3].value.label = sm.getI18n('SQUEEZELITE_MC_DSD_PLAYBACK_AUTO');
       }
+      // Fade on pause / resume
+      squeezeliteBasicUIConf.content[4].value = fadeOnPauseResume;
     }
     else { // 'manual' playerConfigType
-      const manualPlayerConfig = sm.getConfigValue('manualPlayerConfig');
-      squeezeliteManualUIConf.content[1].value = manualPlayerConfig.startupOptions;
+      squeezeliteManualUIConf.content[1].value = playerConfig.fadeOnPauseResume;
+      squeezeliteManualUIConf.content[2].value = playerConfig.startupOptions;
 
       // Get suggested startup options
       const defaultStartupParams = await this.#getPlayerStartupParams(true);
       const suggestedStartupOptions = basicPlayerStartupParamsToSqueezeliteOpts(defaultStartupParams);
-      squeezeliteManualUIConf.content[2].value = suggestedStartupOptions;
+      squeezeliteManualUIConf.content[3].value = suggestedStartupOptions;
       // Apply suggested button payload
-      squeezeliteManualUIConf.content[3].onClick.data.data = {
+      squeezeliteManualUIConf.content[4].onClick.data.data = {
         startupOptions: suggestedStartupOptions
       };
     }
@@ -493,14 +494,7 @@ class ControllerSqueezeliteMC {
           await this.#commandDispatcher.sendVolume(this.#volumioVolume);
         }
 
-        /**
-         * Set LMS Player Settings -> Audio -> Volume Control to 'Output level is fixed at 100%'.
-         * This is to avoid Squeezelite from zero-ing out the volume on pause, which obviously
-         * causes problems with native DSD playback. Also, after Squeezelite mutes the volume on pause,
-         * playing from another Volumio source will not restore the volume to its previous level (i.e.
-         * it stays muted).
-         */
-        await this.#commandDispatcher.sendPref('digitalVolumeControl', 0);
+        await this.#applyFadeOnPauseResume();
 
         await this.#clearPlayerStatusMonitor(); // Ensure there is only one monitor instance
         const playerStatusMonitor = new PlayerStatusMonitor(player, serverCredentials);
@@ -537,6 +531,20 @@ class ControllerSqueezeliteMC {
           playerId: macAddresses
         }
       });
+    }
+  }
+
+  #applyFadeOnPauseResume() {
+    const { fadeOnPauseResume } = this.#getPlayerConfig();
+    if (this.#commandDispatcher && fadeOnPauseResume) {
+      /**
+       * Set LMS Player Settings -> Audio -> Volume Control to 'Output level is fixed at 100%'.
+       * This is to avoid Squeezelite from zero-ing out the volume on pause, which obviously
+       * causes problems with native DSD playback. Also, after Squeezelite mutes the volume on pause,
+       * playing from another Volumio source will not restore the volume to its previous level (i.e.
+       * it stays muted).
+       */
+      return this.#commandDispatcher.sendPref('digitalVolumeControl', 0);
     }
   }
 
@@ -850,6 +858,18 @@ class ControllerSqueezeliteMC {
     }
   }
 
+  #getPlayerConfig(): PlayerConfig {
+    const playerConfigType = sm.getConfigValue('playerConfigType');
+    const playerConfig = playerConfigType === 'basic' ?
+      sm.getConfigValue('basicPlayerConfig') : sm.getConfigValue('manualPlayerConfig');
+    const defaultPlayerConfig = playerConfigType === 'basic' ?
+      sm.getConfigValue('basicPlayerConfig', true) : sm.getConfigValue('manualPlayerConfig', true);
+    return {
+      ...defaultPlayerConfig,
+      ...playerConfig
+    };
+  }
+
   async #getPlayerStartupParams(getDefault: true): Promise<BasicPlayerStartupParams>;
   async #getPlayerStartupParams(getDefault?: boolean): Promise<PlayerStartupParams>;
   async #getPlayerStartupParams(getDefault = false): Promise<PlayerStartupParams> {
@@ -1147,7 +1167,7 @@ class ControllerSqueezeliteMC {
     this.#revalidatePlayerConfig({ force: true });
   }
 
-  configSaveBasicSqueezeliteSettings(data: any) {
+  async configSaveBasicSqueezeliteSettings(data: any) {
     const playerNameType = data.playerNameType.value;
     const playerName = data.playerName.trim();
     const dsdPlayback = data.dsdPlayback.value;
@@ -1163,11 +1183,15 @@ class ControllerSqueezeliteMC {
       oldConfig.dsdPlayback !== dsdPlayback;
 
     const newConfig: BasicPlayerConfig = {
+      type: 'basic',
       playerNameType,
       playerName,
-      dsdPlayback
+      dsdPlayback,
+      fadeOnPauseResume: data.fadeOnPauseResume
     };
     sm.setConfigValue('basicPlayerConfig', newConfig);
+
+    await this.#applyFadeOnPauseResume();
 
     if (!revalidate) {
       sm.toast('success', sm.getI18n('SQUEEZELITE_MC_SETTINGS_SAVED'));
@@ -1177,14 +1201,18 @@ class ControllerSqueezeliteMC {
     }
   }
 
-  configSaveManualSqueezeliteSettings(data: any) {
+  async configSaveManualSqueezeliteSettings(data: any) {
     const startupOptions = data.startupOptions.trim();
     const { startupOptions: oldStartupOptions } = sm.getConfigValue('manualPlayerConfig');
 
     const newConfig: ManualPlayerConfig = {
+      type: 'manual',
+      fadeOnPauseResume: data.fadeOnPauseResume,
       startupOptions
     };
     sm.setConfigValue('manualPlayerConfig', newConfig);
+
+    await this.#applyFadeOnPauseResume();
 
     if (startupOptions === oldStartupOptions) {
       sm.toast('success', sm.getI18n('SQUEEZELITE_MC_SETTINGS_SAVED'));

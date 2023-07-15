@@ -7,13 +7,18 @@ export interface PluginConfigSchemaEntry<T, U = false> {
     json: U;
 }
 export interface BasicPlayerConfig {
+    type: 'basic';
     playerNameType: 'hostname' | 'custom';
     playerName: string;
     dsdPlayback: DSDPlayback;
+    fadeOnPauseResume: boolean;
 }
 export interface ManualPlayerConfig {
+    type: 'manual';
+    fadeOnPauseResume: boolean;
     startupOptions: string;
 }
+export type PlayerConfig = BasicPlayerConfig | ManualPlayerConfig;
 export interface PluginConfigSchema {
     playerConfigType: PluginConfigSchemaEntry<'basic' | 'manual'>;
     basicPlayerConfig: PluginConfigSchemaEntry<BasicPlayerConfig, true>;

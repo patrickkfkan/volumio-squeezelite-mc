@@ -20,8 +20,8 @@ declare class ControllerSqueezeliteMC {
     configSaveServerCredentials(data?: Record<string, string>): void;
     configSwitchToBasicSqueezeliteSettings(): void;
     configSwitchToManualSqueezeliteSettings(): void;
-    configSaveBasicSqueezeliteSettings(data: any): void;
-    configSaveManualSqueezeliteSettings(data: any): void;
+    configSaveBasicSqueezeliteSettings(data: any): Promise<void>;
+    configSaveManualSqueezeliteSettings(data: any): Promise<void>;
     /**
      * Volumio playback control functions
      */

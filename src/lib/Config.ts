@@ -11,14 +11,20 @@ export interface PluginConfigSchemaEntry<T, U = false> {
 }
 
 export interface BasicPlayerConfig {
+  type: 'basic';
   playerNameType: 'hostname' | 'custom';
   playerName: string;
   dsdPlayback: DSDPlayback;
+  fadeOnPauseResume: boolean;
 }
 
 export interface ManualPlayerConfig {
+  type: 'manual';
+  fadeOnPauseResume: boolean;
   startupOptions: string;
 }
+
+export type PlayerConfig = BasicPlayerConfig | ManualPlayerConfig;
 
 export interface PluginConfigSchema {
   playerConfigType: PluginConfigSchemaEntry<'basic' | 'manual'>;
@@ -28,12 +34,16 @@ export interface PluginConfigSchema {
 }
 
 const defaultBasicPlayerConfig: BasicPlayerConfig = {
+  type: 'basic',
   playerNameType: 'hostname',
   playerName: '',
-  dsdPlayback: 'auto'
+  dsdPlayback: 'auto',
+  fadeOnPauseResume: true
 } as const;
 
 const defaultManualPlayerConfig: ManualPlayerConfig = {
+  type: 'manual',
+  fadeOnPauseResume: true,
   startupOptions: ''
 } as const;
 

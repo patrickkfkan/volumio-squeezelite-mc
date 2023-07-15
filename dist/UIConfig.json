@@ -25,7 +25,8 @@
         "data": [
           "playerNameType",
           "playerName",
-          "dsdPlayback"
+          "dsdPlayback",
+          "fadeOnPauseResume"
         ]
       },
       "content": [
@@ -116,6 +117,13 @@
               "value": "DSD_U32_BE"
             }
           ]
+        },
+        {
+          "id": "fadeOnPauseResume",
+          "element": "switch",
+          "label": "TRANSLATE.SQUEEZELITE_MC_FADE_ON_PAUSE_RESUME",
+          "doc": "TRANSLATE.SQUEEZELITE_MC_DOC_FADE_ON_PAUSE_RESUME",
+          "value": true
         }
       ]
     },
@@ -132,7 +140,8 @@
       "saveButton": {
         "label": "TRANSLATE.SQUEEZELITE_MC_SAVE",
         "data": [
-          "startupOptions"
+          "startupOptions",
+          "fadeOnPauseResume"
         ]
       },
       "content": [
@@ -149,6 +158,13 @@
               "data": ""
             }
           }
+        },
+        {
+          "id": "fadeOnPauseResume",
+          "element": "switch",
+          "label": "TRANSLATE.SQUEEZELITE_MC_FADE_ON_PAUSE_RESUME",
+          "doc": "TRANSLATE.SQUEEZELITE_MC_DOC_FADE_ON_PAUSE_RESUME",
+          "value": true
         },
         {
           "id": "startupOptions",

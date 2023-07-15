@@ -2,11 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PLUGIN_CONFIG_SCHEMA = void 0;
 const defaultBasicPlayerConfig = {
+    type: 'basic',
     playerNameType: 'hostname',
     playerName: '',
-    dsdPlayback: 'auto'
+    dsdPlayback: 'auto',
+    fadeOnPauseResume: true
 };
 const defaultManualPlayerConfig = {
+    type: 'manual',
+    fadeOnPauseResume: true,
     startupOptions: ''
 };
 exports.PLUGIN_CONFIG_SCHEMA = {

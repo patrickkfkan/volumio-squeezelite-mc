@@ -36,7 +36,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _ControllerSqueezeliteMC_instances, _ControllerSqueezeliteMC_serviceName, _ControllerSqueezeliteMC_context, _ControllerSqueezeliteMC_config, _ControllerSqueezeliteMC_commandRouter, _ControllerSqueezeliteMC_playerRunState, _ControllerSqueezeliteMC_playerStatusMonitor, _ControllerSqueezeliteMC_playbackTimer, _ControllerSqueezeliteMC_lastState, _ControllerSqueezeliteMC_volatileCallback, _ControllerSqueezeliteMC_volumioSetVolumeCallback, _ControllerSqueezeliteMC_commandDispatcher, _ControllerSqueezeliteMC_proxy, _ControllerSqueezeliteMC_playerFinder, _ControllerSqueezeliteMC_volumioVolume, _ControllerSqueezeliteMC_playerConfigChangeDelayTimer, _ControllerSqueezeliteMC_playerConfigChangeHandler, _ControllerSqueezeliteMC_playerStartupParams, _ControllerSqueezeliteMC_previousDoubleClickTimeout, _ControllerSqueezeliteMC_doGetUIConfig, _ControllerSqueezeliteMC_initAndStartPlayerFinder, _ControllerSqueezeliteMC_clearPlayerStatusMonitor, _ControllerSqueezeliteMC_clearPlayerFinder, _ControllerSqueezeliteMC_handlePlayerDisconnect, _ControllerSqueezeliteMC_handlePlayerDiscoveryError, _ControllerSqueezeliteMC_handlePlayerStatusUpdate, _ControllerSqueezeliteMC_pushState, _ControllerSqueezeliteMC_stopCurrentServiceAndSetVolatile, _ControllerSqueezeliteMC_pushEmptyState, _ControllerSqueezeliteMC_getCurrentService, _ControllerSqueezeliteMC_isCurrentService, _ControllerSqueezeliteMC_requestPlayerStatusUpdate, _ControllerSqueezeliteMC_getPlayerStartupParams, _ControllerSqueezeliteMC_getBestSupportedDSDFormat, _ControllerSqueezeliteMC_getVolumioVolume, _ControllerSqueezeliteMC_revalidatePlayerConfig, _ControllerSqueezeliteMC_handlePlayerConfigChange, _ControllerSqueezeliteMC_resolveOnStatusMode;
+var _ControllerSqueezeliteMC_instances, _ControllerSqueezeliteMC_serviceName, _ControllerSqueezeliteMC_context, _ControllerSqueezeliteMC_config, _ControllerSqueezeliteMC_commandRouter, _ControllerSqueezeliteMC_playerRunState, _ControllerSqueezeliteMC_playerStatusMonitor, _ControllerSqueezeliteMC_playbackTimer, _ControllerSqueezeliteMC_lastState, _ControllerSqueezeliteMC_volatileCallback, _ControllerSqueezeliteMC_volumioSetVolumeCallback, _ControllerSqueezeliteMC_commandDispatcher, _ControllerSqueezeliteMC_proxy, _ControllerSqueezeliteMC_playerFinder, _ControllerSqueezeliteMC_volumioVolume, _ControllerSqueezeliteMC_playerConfigChangeDelayTimer, _ControllerSqueezeliteMC_playerConfigChangeHandler, _ControllerSqueezeliteMC_playerStartupParams, _ControllerSqueezeliteMC_previousDoubleClickTimeout, _ControllerSqueezeliteMC_doGetUIConfig, _ControllerSqueezeliteMC_initAndStartPlayerFinder, _ControllerSqueezeliteMC_applyFadeOnPauseResume, _ControllerSqueezeliteMC_clearPlayerStatusMonitor, _ControllerSqueezeliteMC_clearPlayerFinder, _ControllerSqueezeliteMC_handlePlayerDisconnect, _ControllerSqueezeliteMC_handlePlayerDiscoveryError, _ControllerSqueezeliteMC_handlePlayerStatusUpdate, _ControllerSqueezeliteMC_pushState, _ControllerSqueezeliteMC_stopCurrentServiceAndSetVolatile, _ControllerSqueezeliteMC_pushEmptyState, _ControllerSqueezeliteMC_getCurrentService, _ControllerSqueezeliteMC_isCurrentService, _ControllerSqueezeliteMC_requestPlayerStatusUpdate, _ControllerSqueezeliteMC_getPlayerConfig, _ControllerSqueezeliteMC_getPlayerStartupParams, _ControllerSqueezeliteMC_getBestSupportedDSDFormat, _ControllerSqueezeliteMC_getVolumioVolume, _ControllerSqueezeliteMC_revalidatePlayerConfig, _ControllerSqueezeliteMC_handlePlayerConfigChange, _ControllerSqueezeliteMC_resolveOnStatusMode;
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 const kew_1 = __importDefault(require("kew"));
@@ -338,7 +338,7 @@ class ControllerSqueezeliteMC {
         SqueezeliteMCContext_1.default.setConfigValue('playerConfigType', 'manual');
         __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_revalidatePlayerConfig).call(this, { force: true });
     }
-    configSaveBasicSqueezeliteSettings(data) {
+    async configSaveBasicSqueezeliteSettings(data) {
         const playerNameType = data.playerNameType.value;
         const playerName = data.playerName.trim();
         const dsdPlayback = data.dsdPlayback.value;
@@ -351,11 +351,14 @@ class ControllerSqueezeliteMC {
             oldConfig.playerName !== playerName ||
             oldConfig.dsdPlayback !== dsdPlayback;
         const newConfig = {
+            type: 'basic',
             playerNameType,
             playerName,
-            dsdPlayback
+            dsdPlayback,
+            fadeOnPauseResume: data.fadeOnPauseResume
         };
         SqueezeliteMCContext_1.default.setConfigValue('basicPlayerConfig', newConfig);
+        await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_applyFadeOnPauseResume).call(this);
         if (!revalidate) {
             SqueezeliteMCContext_1.default.toast('success', SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_SETTINGS_SAVED'));
         }
@@ -363,13 +366,16 @@ class ControllerSqueezeliteMC {
             __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_revalidatePlayerConfig).call(this);
         }
     }
-    configSaveManualSqueezeliteSettings(data) {
+    async configSaveManualSqueezeliteSettings(data) {
         const startupOptions = data.startupOptions.trim();
         const { startupOptions: oldStartupOptions } = SqueezeliteMCContext_1.default.getConfigValue('manualPlayerConfig');
         const newConfig = {
+            type: 'manual',
+            fadeOnPauseResume: data.fadeOnPauseResume,
             startupOptions
         };
         SqueezeliteMCContext_1.default.setConfigValue('manualPlayerConfig', newConfig);
+        await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_applyFadeOnPauseResume).call(this);
         if (startupOptions === oldStartupOptions) {
             SqueezeliteMCContext_1.default.toast('success', SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_SETTINGS_SAVED'));
         }
@@ -454,8 +460,8 @@ _ControllerSqueezeliteMC_serviceName = new WeakMap(), _ControllerSqueezeliteMC_c
     const squeezeliteBasicUIConf = uiconf.sections[1];
     const squeezeliteManualUIConf = uiconf.sections[2];
     const serverCredentialsUIConf = uiconf.sections[3];
-    const playerConfigType = SqueezeliteMCContext_1.default.getConfigValue('playerConfigType');
-    if (playerConfigType === 'basic') {
+    const playerConfig = __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_getPlayerConfig).call(this);
+    if (playerConfig.type === 'basic') {
         uiconf.sections.splice(2, 1);
     }
     else { // `manual` playerConfigType
@@ -524,9 +530,8 @@ _ControllerSqueezeliteMC_serviceName = new WeakMap(), _ControllerSqueezeliteMC_c
     /**
      * Squeezelite conf
      */
-    if (playerConfigType === 'basic') {
-        const basicPlayerConfig = SqueezeliteMCContext_1.default.getConfigValue('basicPlayerConfig');
-        const { playerNameType, playerName, dsdPlayback } = basicPlayerConfig;
+    if (playerConfig.type === 'basic') {
+        const { playerNameType, playerName, dsdPlayback, fadeOnPauseResume } = playerConfig;
         // Player name
         squeezeliteBasicUIConf.content[1].value = {
             value: playerNameType
@@ -568,16 +573,18 @@ _ControllerSqueezeliteMC_serviceName = new WeakMap(), _ControllerSqueezeliteMC_c
             default: // 'auto'
                 squeezeliteBasicUIConf.content[3].value.label = SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_DSD_PLAYBACK_AUTO');
         }
+        // Fade on pause / resume
+        squeezeliteBasicUIConf.content[4].value = fadeOnPauseResume;
     }
     else { // 'manual' playerConfigType
-        const manualPlayerConfig = SqueezeliteMCContext_1.default.getConfigValue('manualPlayerConfig');
-        squeezeliteManualUIConf.content[1].value = manualPlayerConfig.startupOptions;
+        squeezeliteManualUIConf.content[1].value = playerConfig.fadeOnPauseResume;
+        squeezeliteManualUIConf.content[2].value = playerConfig.startupOptions;
         // Get suggested startup options
         const defaultStartupParams = await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_getPlayerStartupParams).call(this, true);
         const suggestedStartupOptions = (0, Util_1.basicPlayerStartupParamsToSqueezeliteOpts)(defaultStartupParams);
-        squeezeliteManualUIConf.content[2].value = suggestedStartupOptions;
+        squeezeliteManualUIConf.content[3].value = suggestedStartupOptions;
         // Apply suggested button payload
-        squeezeliteManualUIConf.content[3].onClick.data.data = {
+        squeezeliteManualUIConf.content[4].onClick.data.data = {
             startupOptions: suggestedStartupOptions
         };
     }
@@ -659,14 +666,7 @@ async function _ControllerSqueezeliteMC_initAndStartPlayerFinder() {
             if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_volumioVolume, "f") !== undefined) {
                 await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandDispatcher, "f").sendVolume(__classPrivateFieldGet(this, _ControllerSqueezeliteMC_volumioVolume, "f"));
             }
-            /**
-             * Set LMS Player Settings -> Audio -> Volume Control to 'Output level is fixed at 100%'.
-             * This is to avoid Squeezelite from zero-ing out the volume on pause, which obviously
-             * causes problems with native DSD playback. Also, after Squeezelite mutes the volume on pause,
-             * playing from another Volumio source will not restore the volume to its previous level (i.e.
-             * it stays muted).
-             */
-            await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandDispatcher, "f").sendPref('digitalVolumeControl', 0);
+            await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_applyFadeOnPauseResume).call(this);
             await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_clearPlayerStatusMonitor).call(this); // Ensure there is only one monitor instance
             const playerStatusMonitor = new PlayerStatusMonitor_1.default(player, serverCredentials);
             __classPrivateFieldSet(this, _ControllerSqueezeliteMC_playerStatusMonitor, playerStatusMonitor, "f");
@@ -699,6 +699,18 @@ async function _ControllerSqueezeliteMC_initAndStartPlayerFinder() {
                 playerId: macAddresses
             }
         });
+    }
+}, _ControllerSqueezeliteMC_applyFadeOnPauseResume = function _ControllerSqueezeliteMC_applyFadeOnPauseResume() {
+    const { fadeOnPauseResume } = __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_getPlayerConfig).call(this);
+    if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandDispatcher, "f") && fadeOnPauseResume) {
+        /**
+         * Set LMS Player Settings -> Audio -> Volume Control to 'Output level is fixed at 100%'.
+         * This is to avoid Squeezelite from zero-ing out the volume on pause, which obviously
+         * causes problems with native DSD playback. Also, after Squeezelite mutes the volume on pause,
+         * playing from another Volumio source will not restore the volume to its previous level (i.e.
+         * it stays muted).
+         */
+        return __classPrivateFieldGet(this, _ControllerSqueezeliteMC_commandDispatcher, "f").sendPref('digitalVolumeControl', 0);
     }
 }, _ControllerSqueezeliteMC_clearPlayerStatusMonitor = async function _ControllerSqueezeliteMC_clearPlayerStatusMonitor() {
     if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerStatusMonitor, "f")) {
@@ -942,6 +954,16 @@ async function _ControllerSqueezeliteMC_initAndStartPlayerFinder() {
     if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_isCurrentService).call(this) && __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerStatusMonitor, "f")) {
         __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerStatusMonitor, "f").requestUpdate();
     }
+}, _ControllerSqueezeliteMC_getPlayerConfig = function _ControllerSqueezeliteMC_getPlayerConfig() {
+    const playerConfigType = SqueezeliteMCContext_1.default.getConfigValue('playerConfigType');
+    const playerConfig = playerConfigType === 'basic' ?
+        SqueezeliteMCContext_1.default.getConfigValue('basicPlayerConfig') : SqueezeliteMCContext_1.default.getConfigValue('manualPlayerConfig');
+    const defaultPlayerConfig = playerConfigType === 'basic' ?
+        SqueezeliteMCContext_1.default.getConfigValue('basicPlayerConfig', true) : SqueezeliteMCContext_1.default.getConfigValue('manualPlayerConfig', true);
+    return {
+        ...defaultPlayerConfig,
+        ...playerConfig
+    };
 }, _ControllerSqueezeliteMC_getPlayerStartupParams = async function _ControllerSqueezeliteMC_getPlayerStartupParams(getDefault = false) {
     const playerConfigType = SqueezeliteMCContext_1.default.getConfigValue('playerConfigType');
     if (playerConfigType === 'basic' || getDefault) {
