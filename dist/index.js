@@ -580,8 +580,19 @@ _ControllerSqueezeliteMC_serviceName = new WeakMap(), _ControllerSqueezeliteMC_c
         squeezeliteManualUIConf.content[1].value = playerConfig.fadeOnPauseResume;
         squeezeliteManualUIConf.content[2].value = playerConfig.startupOptions;
         // Get suggested startup options
-        const defaultStartupParams = await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_getPlayerStartupParams).call(this, true);
-        const suggestedStartupOptions = (0, Util_1.basicPlayerStartupParamsToSqueezeliteOpts)(defaultStartupParams);
+        let suggestedStartupOptions;
+        try {
+            const defaultStartupParams = await __classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_getPlayerStartupParams).call(this, true);
+            suggestedStartupOptions = (0, Util_1.basicPlayerStartupParamsToSqueezeliteOpts)(defaultStartupParams);
+        }
+        catch (error) {
+            if (error instanceof System_1.SystemError && error.code === System_1.SystemErrorCode.DeviceBusy) {
+                squeezeliteManualUIConf.description = SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_ERR_SUGGESTED_STARTUP_OPTS_DEV_BUSY');
+            }
+            else {
+                squeezeliteManualUIConf.description = SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_ERR_SUGGESTED_STARTUP_OPTS');
+            }
+        }
         squeezeliteManualUIConf.content[3].value = suggestedStartupOptions;
         // Apply suggested button payload
         squeezeliteManualUIConf.content[4].onClick.data.data = {

@@ -61,5 +61,7 @@
   "SQUEEZELITE_MC_ERR_REVALIDATE_DEV_BUSY": "Failed to update Squeezelite's runtime configuration: Output device busy. Please try to resolve this in the plugin settings.",
   "SQUEEZELITE_MC_ERR_STOP": "An error occurred while stopping Squeezelite: {}",
   "SQUEEZELITE_MC_ERR_SERVER_REQUEST": "Request to {} ({}) failed with error:",
-  "SQUEEZELITE_MC_ERR_PLAYER_DISCOVER": "{}. Monitoring may not be possible if Squeezelite is connected to this server."
+  "SQUEEZELITE_MC_ERR_PLAYER_DISCOVER": "{}. Monitoring may not be possible if Squeezelite is connected to this server.",
+  "SQUEEZELITE_MC_ERR_SUGGESTED_STARTUP_OPTS": "⚠️ An error occurred while getting Suggested Startup Options. Please try again by stopping all playback and reloading the config page.",
+  "SQUEEZELITE_MC_ERR_SUGGESTED_STARTUP_OPTS_DEV_BUSY": "⚠️ Could not get Suggested Startup Options because output device is busy. Please try again by stopping all playback and reloading the config page."
 }

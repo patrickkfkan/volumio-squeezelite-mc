@@ -264,8 +264,19 @@ class ControllerSqueezeliteMC {
       squeezeliteManualUIConf.content[2].value = playerConfig.startupOptions;
 
       // Get suggested startup options
-      const defaultStartupParams = await this.#getPlayerStartupParams(true);
-      const suggestedStartupOptions = basicPlayerStartupParamsToSqueezeliteOpts(defaultStartupParams);
+      let suggestedStartupOptions;
+      try {
+        const defaultStartupParams = await this.#getPlayerStartupParams(true);
+        suggestedStartupOptions = basicPlayerStartupParamsToSqueezeliteOpts(defaultStartupParams);
+      }
+      catch (error) {
+        if (error instanceof SystemError && error.code === SystemErrorCode.DeviceBusy) {
+          squeezeliteManualUIConf.description = sm.getI18n('SQUEEZELITE_MC_ERR_SUGGESTED_STARTUP_OPTS_DEV_BUSY');
+        }
+        else {
+          squeezeliteManualUIConf.description = sm.getI18n('SQUEEZELITE_MC_ERR_SUGGESTED_STARTUP_OPTS');
+        }
+      }
       squeezeliteManualUIConf.content[3].value = suggestedStartupOptions;
       // Apply suggested button payload
       squeezeliteManualUIConf.content[4].onClick.data.data = {
