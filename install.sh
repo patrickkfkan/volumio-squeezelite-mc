@@ -29,6 +29,8 @@ if [ $ARCH = "armv6l" ] || [ $ARCH = "armv7l" ]; then
     ARCHIVE="squeezelite-1.9.9.1403-ffmpeg-armhf.tar.gz"
 elif [ $ARCH = "x86_64" ]; then
     ARCHIVE="squeezelite-1.9.9.1392-x86_64.tar.gz"
+elif [ $ARCH = "aarch64" ]; then
+    ARCHIVE="squeezelite-1.9.9.1428-aarch64.tar.gz"
 fi
 
 if [ -z $ARCHIVE ]; then
