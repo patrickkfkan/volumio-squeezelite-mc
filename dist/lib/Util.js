@@ -22,11 +22,13 @@ exports.getServerConnectParams = getServerConnectParams;
 exports.jsPromiseToKew = jsPromiseToKew;
 exports.kewToJSPromise = kewToJSPromise;
 exports.basicPlayerStartupParamsToSqueezeliteOpts = basicPlayerStartupParamsToSqueezeliteOpts;
+exports.getLmsPlayerMonitorConfig = getLmsPlayerMonitorConfig;
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 const kew_1 = __importDefault(require("kew"));
 const os_1 = __importDefault(require("os"));
 const System_1 = require("./System");
+const SqueezeliteMCContext_1 = __importDefault(require("./SqueezeliteMCContext"));
 const DSD_FORMAT_TO_SQUEEZELITE_OPT = {
     'dop': 'dop',
     'DSD_U8': 'u8',
@@ -136,5 +138,22 @@ function basicPlayerStartupParamsToSqueezeliteOpts(params) {
     }
     parts.push(`-f ${System_1.SQUEEZELITE_LOG_FILE}`);
     return parts.join(' ');
+}
+function getLmsPlayerMonitorConfig(server, serverCredentials) {
+    const connectParams = getServerConnectParams(server, serverCredentials, 'rpc');
+    return {
+        server: {
+            host: server.ip,
+            port: server.jsonPort,
+            username: connectParams.username,
+            password: connectParams.password
+        },
+        logger: {
+            debug: (msg) => SqueezeliteMCContext_1.default.getLogger().debug(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
+            info: (msg) => SqueezeliteMCContext_1.default.getLogger().info(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
+            warn: (msg) => SqueezeliteMCContext_1.default.getLogger().warn(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
+            error: (msg) => SqueezeliteMCContext_1.default.getLogger().error(`[squeezelite_mc] (lms-player-monitor) ${msg}`)
+        }
+    };
 }
 //# sourceMappingURL=Util.js.map

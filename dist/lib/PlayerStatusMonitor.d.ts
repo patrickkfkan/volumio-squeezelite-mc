@@ -9,6 +9,11 @@ export default class PlayerStatusMonitor extends EventEmitter {
     stop(): Promise<void>;
     getPlayer(): Player;
     requestUpdate(): void;
+    emit(event: 'update', data: {
+        player: Player;
+        status: PlayerStatus;
+    }): boolean;
+    emit(event: 'disconnect', player: Player): boolean;
     on(event: 'update', listener: (data: {
         player: Player;
         status: PlayerStatus;

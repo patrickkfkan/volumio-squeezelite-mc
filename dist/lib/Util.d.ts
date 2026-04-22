@@ -1,6 +1,7 @@
 import { type ServerCredentials } from './types/Server';
 import type Server from './types/Server';
 import { type BasicPlayerStartupParams } from './types/Player';
+import { type LmsPlayerMonitorConfig } from 'lms-player-monitor';
 export interface ServerConnectParams {
     host?: string;
     port?: string;
@@ -26,4 +27,5 @@ export declare class PlaybackTimer {
     getSeek(): number;
 }
 export declare function basicPlayerStartupParamsToSqueezeliteOpts(params: BasicPlayerStartupParams): string;
+export declare function getLmsPlayerMonitorConfig(server: Server, serverCredentials?: ServerCredentials): LmsPlayerMonitorConfig;
 //# sourceMappingURL=Util.d.ts.map

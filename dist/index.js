@@ -217,6 +217,9 @@ class ControllerSqueezeliteMC {
     }
     onStop() {
         const defer = kew_1.default.defer();
+        if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_instances, "m", _ControllerSqueezeliteMC_isCurrentService).call(this)) {
+            this.unsetVolatile();
+        }
         __classPrivateFieldSet(this, _ControllerSqueezeliteMC_playerStartupParams, null, "f");
         __classPrivateFieldSet(this, _ControllerSqueezeliteMC_commandDispatcher, null, "f");
         if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playbackTimer, "f")) {
@@ -793,6 +796,7 @@ _ControllerSqueezeliteMC_serviceName = new WeakMap(), _ControllerSqueezeliteMC_c
 }, _ControllerSqueezeliteMC_handlePlayerDisconnect = function _ControllerSqueezeliteMC_handlePlayerDisconnect() {
     if (__classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerStatusMonitor, "f")) {
         const player = __classPrivateFieldGet(this, _ControllerSqueezeliteMC_playerStatusMonitor, "f").getPlayer();
+        SqueezeliteMCContext_1.default.getLogger().info(`[squeezelite_mc] Player disconnected from ${player.server.name} (${player.server.ip})`);
         SqueezeliteMCContext_1.default.toast('info', SqueezeliteMCContext_1.default.getI18n('SQUEEZELITE_MC_DISCONNECTED', player.server.name, player.server.ip));
     }
     void (async () => {
@@ -830,7 +834,7 @@ _ControllerSqueezeliteMC_serviceName = new WeakMap(), _ControllerSqueezeliteMC_c
                 url = track.artworkUrl;
             }
         }
-        else if (track.coverArt) {
+        else if (track.coverId) {
             url = `http://${player.server.ip}:${player.server.jsonPort}/music/current/cover.jpg?player=${encodeURIComponent(player.id)}&ms=${Date.now()}`;
             useProxy = true;
         }

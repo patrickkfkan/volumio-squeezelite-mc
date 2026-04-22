@@ -448,6 +448,10 @@ class ControllerSqueezeliteMC {
   onStop() {
     const defer = libQ.defer();
 
+    if (this.#isCurrentService()) {
+      this.unsetVolatile();
+    }
+
     this.#playerStartupParams = null;
     this.#commandDispatcher = null;
     if (this.#playbackTimer) {
@@ -594,6 +598,7 @@ class ControllerSqueezeliteMC {
   #handlePlayerDisconnect() {
     if (this.#playerStatusMonitor) {
       const player = this.#playerStatusMonitor.getPlayer();
+      sm.getLogger().info(`[squeezelite_mc] Player disconnected from ${player.server.name} (${player.server.ip})`);
       sm.toast('info', sm.getI18n('SQUEEZELITE_MC_DISCONNECTED', player.server.name, player.server.ip));
     }
     void (async () => {
@@ -637,7 +642,7 @@ class ControllerSqueezeliteMC {
           url = track.artworkUrl;
         }
       }
-      else if (track.coverArt) {
+      else if (track.coverId) {
         url = `http://${player.server.ip}:${player.server.jsonPort}/music/current/cover.jpg?player=${encodeURIComponent(player.id)}&ms=${Date.now()}`;
         useProxy = true;
       }

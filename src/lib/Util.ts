@@ -7,6 +7,8 @@ import {type ServerCredentials} from './types/Server';
 import type Server from './types/Server';
 import { type BasicPlayerStartupParams } from './types/Player';
 import { SQUEEZELITE_LOG_FILE } from './System';
+import sm from './SqueezeliteMCContext';
+import { type LmsPlayerMonitorConfig } from 'lms-player-monitor';
 
 const DSD_FORMAT_TO_SQUEEZELITE_OPT: Record<string, string> = {
   'dop': 'dop',
@@ -144,4 +146,22 @@ export function basicPlayerStartupParamsToSqueezeliteOpts(params: BasicPlayerSta
   parts.push(`-f ${SQUEEZELITE_LOG_FILE}`);
 
   return parts.join(' ');
+}
+
+export function getLmsPlayerMonitorConfig(server: Server, serverCredentials?: ServerCredentials): LmsPlayerMonitorConfig {
+  const connectParams = getServerConnectParams(server, serverCredentials, 'rpc');
+  return {
+    server: {
+      host: server.ip,
+      port: server.jsonPort,
+      username: connectParams.username,
+      password: connectParams.password
+    },
+    logger: {
+      debug: (msg) => sm.getLogger().debug(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
+      info: (msg) => sm.getLogger().info(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
+      warn: (msg) => sm.getLogger().warn(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
+      error: (msg) => sm.getLogger().error(`[squeezelite_mc] (lms-player-monitor) ${msg}`)
+    }
+  }
 }
