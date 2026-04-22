@@ -108,10 +108,10 @@ export class PlaybackTimer {
   start(seek = 0) {
     this.stop();
     this.#seek = seek;
-    this.#sm.currentSeek = this.#seek;
+    this.#updateStateMachineSeek();
     this.#timer = setInterval(() => {
       this.#seek += 1000;
-      this.#sm.currentSeek = this.#seek;
+      this.#updateStateMachineSeek();
     }, 1000);
   }
 
@@ -125,6 +125,10 @@ export class PlaybackTimer {
 
   getSeek() {
     return this.#seek;
+  }
+
+  #updateStateMachineSeek() {
+    this.#sm.volatileState.seek  = this.#seek;
   }
 }
 
