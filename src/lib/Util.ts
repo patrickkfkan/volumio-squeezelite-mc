@@ -97,17 +97,21 @@ export function kewToJSPromise(promise: any): Promise<any> {
 export class PlaybackTimer {
   #seek: number;
   #timer: NodeJS.Timeout | null;
+  #sm;
 
   constructor() {
     this.#seek = 0;
     this.#timer = null;
+    this.#sm = sm.getStateMachine();
   }
 
   start(seek = 0) {
     this.stop();
     this.#seek = seek;
+    this.#sm.currentSeek = this.#seek;
     this.#timer = setInterval(() => {
       this.#seek += 1000;
+      this.#sm.currentSeek = this.#seek;
     }, 1000);
   }
 

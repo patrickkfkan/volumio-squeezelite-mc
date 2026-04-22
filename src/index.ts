@@ -381,17 +381,7 @@ class ControllerSqueezeliteMC {
     if (!this.#volumioSetVolumeCallback) {
       this.#volumioSetVolumeCallback = (volume) => {
         this.#volumioVolume = volume.vol;
-        if (this.#playbackTimer && this.#commandDispatcher) {
-          /**
-           * Volumioupdatevolume() triggers #pushState() in statemachine after calling
-           * this callback - but volatile state with old 'seek' value (from last push) will be used.
-           * this is undesirable if current status is 'play', so we update the statemachine's volatile state
-           * with seek value obtained from our internal playbackTimer.
-           */
-          sm.getLogger().info(`[squeezelite_mc] Setting Squeezelite volume to ${volume.vol}`);
-          if (this.#lastState && this.#lastState.status === 'play' && this.#lastState.seek !== undefined) {
-            this.#pushState({ ...this.#lastState, seek: this.#playbackTimer.getSeek() });
-          }
+        if (this.#commandDispatcher) {
           this.#commandDispatcher
             .sendVolume(this.#volumioVolume)
             .catch((error: unknown) => {
