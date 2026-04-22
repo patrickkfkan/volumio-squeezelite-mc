@@ -774,6 +774,14 @@ class ControllerSqueezeliteMC {
     if (isCurrentService && this.#volumioVolume !== volumioState.volume) {
       this.#commandRouter.volumiosetvolume(volumioState.volume);
     }
+
+    // If player is playing something, we save the volume so we can restore it
+    // in unsetVolatile() if the user switches to another music service while
+    // Squeezelite is *paused* (which will set the mixer volume to 0 - note this is 
+    // not the displayed volume, which remains unchanged).
+    if (volumioState.status === 'play') {
+      sm.set('lastPlaybackVolume', volumioState.volume);
+    }
   }
 
   #pushState(state: VolumioState) {
@@ -837,8 +845,23 @@ class ControllerSqueezeliteMC {
 
   // Callback that gets called by statemachine when unsetting volatile state
   onUnsetVolatile() {
+    const lastPlaybackVolume = sm.get<number>('lastPlaybackVolume');
+    sm.delete('lastPlaybackVolume');
+    
     this.#pushEmptyState();
     sm.getMpdPlugin().ignoreUpdate(false);
+
+    // Check if we're paused. If so, Squeezelite would have probably set the mixer volume to 0.
+    // We would have to restore it to the last known playback volume before we got paused.
+    // Below, "lastPlaybackVolume === this.#lastState.volume" returns false if volume was changed during pause,
+    // which would change the mixer volume to the new volume, so no need to restore.
+    if (this.#lastState?.status === 'pause' &&
+      lastPlaybackVolume &&
+      lastPlaybackVolume === this.#lastState.volume
+    ) {
+      sm.getLogger().info(`[squeezelite_mc] Restoring last known playback volume: ${lastPlaybackVolume}`);
+      this.#commandRouter.volumiosetvolume(lastPlaybackVolume);
+    }
 
     /**
      * There is no graceful handling of switching from one music service plugin to another
