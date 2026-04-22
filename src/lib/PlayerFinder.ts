@@ -41,6 +41,7 @@ export default class PlayerFinder extends EventEmitter {
     this.#status = PlayerFinderStatus.Stopped;
     this.#foundPlayers = [];
     this.#monitors = {};
+    this.#opts = {};
   }
 
   start(opts: PlayerFinderOptions = {}) {

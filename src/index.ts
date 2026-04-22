@@ -114,6 +114,7 @@ class ControllerSqueezeliteMC {
     this.#volatileCallback = null;
     this.#volumioSetVolumeCallback = null;
     this.#commandDispatcher = null;
+    this.#proxy = null;
     this.#playerFinder = null;
     this.#playerConfigChangeDelayTimer = null;
     this.#playerConfigChangeHandler = null;
