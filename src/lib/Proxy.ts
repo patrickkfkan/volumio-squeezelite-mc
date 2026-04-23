@@ -133,10 +133,19 @@ export default class Proxy {
     /**
      * Volumio's Manifest UI sometimes URI-encodes the already encoded `url`
      * so it becomes malformed. We need to check whether this is the case.
-     * Fortunately, it seems a request with double-encoded `url` is preceded by
-     * one with the correct, untampered value.
      */
-    if (typeof url !== 'string' || !this.#validateURL(url)) {
+    let sanitizedUrl: string | null = null;
+    if (typeof url === 'string') {
+      if (this.#validateURL(url)) {
+        sanitizedUrl = url;
+      } else {
+        const altUrl = decodeURIComponent(url);
+        if (this.#validateURL(altUrl)) {
+          sanitizedUrl = altUrl;
+        }
+      }
+    }
+    if (!sanitizedUrl) {
       sm.getLogger().error(
         `[squeezelite_mc] Proxy: invalid URL (${String(url)})`
       );
@@ -145,7 +154,7 @@ export default class Proxy {
 
     void (async () => {
       sm.getLogger().info(
-        `[squeezelite_mc] Proxy request for ${String(serverName)}, URL: ${url}`
+        `[squeezelite_mc] Proxy request for ${String(serverName)}, URL: ${sanitizedUrl}`
       );
       const headers: HeadersInit = {};
       const credentials =
@@ -156,7 +165,7 @@ export default class Proxy {
         headers.Authorization = `Basic ${encodeBase64(`${credentials.username}:${credentials.password || ''}`)}`;
       }
       try {
-        const response = await fetch(url, { headers });
+        const response = await fetch(sanitizedUrl, { headers });
         if (!response.ok) {
           sm.getLogger().error(
             `[squeezelite_mc] Proxy received unexpected response: ${response.status} - ${response.statusText}`
