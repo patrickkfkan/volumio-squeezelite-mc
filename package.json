@@ -6,7 +6,9 @@
 	"scripts": {
 		"build": "rm -rf dist && npx tsc --build src && bash fixup.sh",
 		"lint": "npx eslint ./src",
-		"lint:fix": "npx eslint ./src --fix"
+		"lint:fix": "npx eslint ./src --fix",
+		"format": "prettier --write \"src/**/*.ts\"",
+		"format:check": "prettier --check \"src/**/*.ts\""
 	},
 	"repository": {
 		"type": "git",
@@ -41,6 +43,7 @@
 		"@typescript-eslint/eslint-plugin": "^8.6.0",
 		"@typescript-eslint/parser": "^8.6.0",
 		"eslint": "^9.10.0",
+		"prettier": "^3.8.3",
 		"typescript": "^5.5.4",
 		"typescript-eslint": "^8.6.0",
 		"winston": "^3.8.2"

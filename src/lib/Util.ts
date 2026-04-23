@@ -3,7 +3,7 @@
 import libQ from 'kew';
 
 import os from 'os';
-import {type ServerCredentials} from './types/Server';
+import { type ServerCredentials } from './types/Server';
 import type Server from './types/Server';
 import { type BasicPlayerStartupParams } from './types/Player';
 import { SQUEEZELITE_LOG_FILE } from './System';
@@ -11,12 +11,12 @@ import sm from './SqueezeliteMCContext';
 import { type LmsPlayerMonitorConfig } from 'lms-player-monitor';
 
 const DSD_FORMAT_TO_SQUEEZELITE_OPT: Record<string, string> = {
-  'dop': 'dop',
-  'DSD_U8': 'u8',
-  'DSD_U16_LE': 'u16le',
-  'DSD_U16_BE': 'u16be',
-  'DSD_U32_LE': 'u32le',
-  'DSD_U32_BE': 'u32be'
+  dop: 'dop',
+  DSD_U8: 'u8',
+  DSD_U16_LE: 'u16le',
+  DSD_U16_BE: 'u16be',
+  DSD_U32_LE: 'u32le',
+  DSD_U32_BE: 'u32be'
 };
 
 export interface ServerConnectParams {
@@ -35,8 +35,9 @@ export interface NetworkInterfaces {
 
 export function getNetworkInterfaces() {
   const result: NetworkInterfaces = {};
-  for (const [ ifName, addresses ] of Object.entries(os.networkInterfaces())) {
-    const filteredAddresses = addresses?.filter((ni) => ni.family === 'IPv4' && !ni.internal) || [];
+  for (const [ifName, addresses] of Object.entries(os.networkInterfaces())) {
+    const filteredAddresses =
+      addresses?.filter((ni) => ni.family === 'IPv4' && !ni.internal) || [];
     if (filteredAddresses.length > 0) {
       result[ifName] = filteredAddresses.map((addr) => ({
         address: addr.address,
@@ -52,7 +53,11 @@ export function encodeBase64(str: string) {
   return Buffer.from(str).toString('base64');
 }
 
-export function getServerConnectParams(server: Server, serverCredentials: ServerCredentials | undefined, connectType: 'rpc' | 'cli') {
+export function getServerConnectParams(
+  server: Server,
+  serverCredentials: ServerCredentials | undefined,
+  connectType: 'rpc' | 'cli'
+) {
   const params: ServerConnectParams = {
     host: connectType === 'rpc' ? `http://${server.ip}` : server.ip,
     port: connectType === 'rpc' ? server.jsonPort : server.cliPort || '9090'
@@ -68,9 +73,10 @@ export function getServerConnectParams(server: Server, serverCredentials: Server
 export function jsPromiseToKew<T>(promise: Promise<T>): any {
   const defer = libQ.defer();
 
-  promise.then((result) => {
-    defer.resolve(result);
-  })
+  promise
+    .then((result) => {
+      defer.resolve(result);
+    })
     .catch((error: unknown) => {
       defer.reject(error);
     });
@@ -80,14 +86,18 @@ export function jsPromiseToKew<T>(promise: Promise<T>): any {
 
 export function kewToJSPromise(promise: any): Promise<any> {
   // Guard against a JS promise from being passed to this function.
-  if (typeof promise.catch === 'function' && typeof promise.fail === 'undefined') {
+  if (
+    typeof promise.catch === 'function' &&
+    typeof promise.fail === 'undefined'
+  ) {
     // JS promise - return as is
     return promise;
   }
   return new Promise((resolve, reject) => {
-    promise.then((result: any) => {
-      resolve(result);
-    })
+    promise
+      .then((result: any) => {
+        resolve(result);
+      })
       .fail((error: Error) => {
         reject(error);
       });
@@ -128,17 +138,16 @@ export class PlaybackTimer {
   }
 
   #updateStateMachineSeek() {
-    this.#sm.volatileState.seek  = this.#seek;
+    this.#sm.volatileState.seek = this.#seek;
   }
 }
 
-export function basicPlayerStartupParamsToSqueezeliteOpts(params: BasicPlayerStartupParams) {
+export function basicPlayerStartupParamsToSqueezeliteOpts(
+  params: BasicPlayerStartupParams
+) {
   // Returns:
   // -o squeezelite -C 1 -n {playerName} -D 3:{dsdFormat} -V {mixer} -f ${logFile}
-  const parts = [
-    '-o squeezelite',
-    '-C 1'
-  ];
+  const parts = ['-o squeezelite', '-C 1'];
   if (params.playerName) {
     parts.push(`-n "${params.playerName}"`);
   }
@@ -156,8 +165,15 @@ export function basicPlayerStartupParamsToSqueezeliteOpts(params: BasicPlayerSta
   return parts.join(' ');
 }
 
-export function getLmsPlayerMonitorConfig(server: Server, serverCredentials?: ServerCredentials): LmsPlayerMonitorConfig {
-  const connectParams = getServerConnectParams(server, serverCredentials, 'rpc');
+export function getLmsPlayerMonitorConfig(
+  server: Server,
+  serverCredentials?: ServerCredentials
+): LmsPlayerMonitorConfig {
+  const connectParams = getServerConnectParams(
+    server,
+    serverCredentials,
+    'rpc'
+  );
   return {
     server: {
       host: server.ip,
@@ -166,10 +182,14 @@ export function getLmsPlayerMonitorConfig(server: Server, serverCredentials?: Se
       password: connectParams.password
     },
     logger: {
-      debug: (msg) => sm.getLogger().debug(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
-      info: (msg) => sm.getLogger().info(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
-      warn: (msg) => sm.getLogger().warn(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
-      error: (msg) => sm.getLogger().error(`[squeezelite_mc] (lms-player-monitor) ${msg}`)
+      debug: (msg) =>
+        sm.getLogger().debug(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
+      info: (msg) =>
+        sm.getLogger().info(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
+      warn: (msg) =>
+        sm.getLogger().warn(`[squeezelite_mc] (lms-player-monitor) ${msg}`),
+      error: (msg) =>
+        sm.getLogger().error(`[squeezelite_mc] (lms-player-monitor) ${msg}`)
     }
-  }
+  };
 }

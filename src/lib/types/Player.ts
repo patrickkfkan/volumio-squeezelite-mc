@@ -4,10 +4,12 @@ interface Player {
   id: string;
   ip?: string;
   name: string;
-  server: Server
+  server: Server;
 }
 
-export type PlayerStartupParams = BasicPlayerStartupParams | ManualPlayerStartupParams;
+export type PlayerStartupParams =
+  | BasicPlayerStartupParams
+  | ManualPlayerStartupParams;
 
 export interface AlsaConfig {
   card: string;

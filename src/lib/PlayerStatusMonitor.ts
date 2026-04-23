@@ -4,7 +4,10 @@ import { type PlayerStatus } from './types/Player';
 import type Player from './types/Player';
 import { type ServerCredentials } from './types/Server';
 import { getLmsPlayerMonitorConfig } from './Util';
-import { LmsPlayerMonitor, type PlayerStatus as MonitoredPlayerStatus } from 'lms-player-monitor';
+import {
+  LmsPlayerMonitor,
+  type PlayerStatus as MonitoredPlayerStatus
+} from 'lms-player-monitor';
 
 export default class PlayerStatusMonitor extends EventEmitter {
   #player: Player;
@@ -25,9 +28,13 @@ export default class PlayerStatusMonitor extends EventEmitter {
     try {
       const status = await this.#monitor.getPlayerStatus(this.#player.id);
       this.#emitStatus(status);
-    }
-    catch (error: unknown) {
-      sm.getLogger().error(sm.getErrorMessage('[squeezelite_mc] Error getting player status:', error));
+    } catch (error: unknown) {
+      sm.getLogger().error(
+        sm.getErrorMessage(
+          '[squeezelite_mc] Error getting player status:',
+          error
+        )
+      );
     }
   }
 
@@ -37,9 +44,10 @@ export default class PlayerStatusMonitor extends EventEmitter {
     }
     try {
       await this.#monitor.stop();
-    }
-    catch (error: unknown) {
-      sm.getLogger().error(sm.getErrorMessage('Error stopping player monitor:', error, false));
+    } catch (error: unknown) {
+      sm.getLogger().error(
+        sm.getErrorMessage('Error stopping player monitor:', error, false)
+      );
     }
   }
 
@@ -51,11 +59,18 @@ export default class PlayerStatusMonitor extends EventEmitter {
     if (!this.#monitor) {
       return;
     }
-    this.#monitor.getPlayerStatus(this.#player.id).then((status) => {
-      this.#emitStatus(status);
-    })
+    this.#monitor
+      .getPlayerStatus(this.#player.id)
+      .then((status) => {
+        this.#emitStatus(status);
+      })
       .catch((error: unknown) => {
-        sm.getLogger().error(sm.getErrorMessage('[squeezelite_mc]: Error handling update request:', error));
+        sm.getLogger().error(
+          sm.getErrorMessage(
+            '[squeezelite_mc]: Error handling update request:',
+            error
+          )
+        );
       });
   }
 
@@ -131,20 +146,28 @@ export default class PlayerStatusMonitor extends EventEmitter {
   }
 
   async #createAndStartMonitor() {
-    const monitor = new LmsPlayerMonitor(getLmsPlayerMonitorConfig(this.#player.server, this.#serverCredentials));
+    const monitor = new LmsPlayerMonitor(
+      getLmsPlayerMonitorConfig(this.#player.server, this.#serverCredentials)
+    );
     monitor.on('playerStatus', (status) => this.#handleStatusUpdate(status));
     monitor.on('serverDisconnect', () => this.#handleDisconnect());
     await monitor.start();
     return monitor;
   }
 
-  emit(event: 'update', data: { player: Player, status: PlayerStatus }): boolean;
+  emit(
+    event: 'update',
+    data: { player: Player; status: PlayerStatus }
+  ): boolean;
   emit(event: 'disconnect', player: Player): boolean;
   emit<K>(eventName: string | symbol, ...args: any[]): boolean {
     return super.emit(eventName, ...args);
   }
 
-  on(event: 'update', listener: (data: { player: Player; status: PlayerStatus }) => void): this;
+  on(
+    event: 'update',
+    listener: (data: { player: Player; status: PlayerStatus }) => void
+  ): this;
   on(event: 'disconnect', listener: (player: Player) => void): this;
   on(event: string | symbol, listener: (...args: any[]) => void): this {
     return super.on(event, listener);
