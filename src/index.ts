@@ -379,7 +379,7 @@ class ControllerSqueezeliteMC {
       serversSelectData
         .map((select) => select.value)
         .forEach((serverName) => {
-          const { username = '', password = '' } =
+          const { username, password } =
             serverCredentials[serverName] || {};
           const usernameField = {
             id: `${serverName}_username`,
@@ -1455,7 +1455,7 @@ class ControllerSqueezeliteMC {
     });
   }
 
-  async configSaveBasicSqueezeliteSettings(data: any) {
+  configSaveBasicSqueezeliteSettings(data: any) {
     const playerNameType = data.playerNameType.value;
     const playerName = data.playerName.trim();
     const dsdPlayback = data.dsdPlayback.value;
@@ -1487,7 +1487,7 @@ class ControllerSqueezeliteMC {
     }
   }
 
-  async configSaveManualSqueezeliteSettings(data: any) {
+  configSaveManualSqueezeliteSettings(data: any) {
     const startupOptions = data.startupOptions.trim();
     const { startupOptions: oldStartupOptions } =
       sm.getConfigValue('manualPlayerConfig');

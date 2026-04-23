@@ -30,13 +30,13 @@ function execCommand(cmd: string, sudo = false) {
         if (error) {
           sm.getLogger().error(
             sm.getErrorMessage(
-              `[squeezelite_mc] Failed to execute ${cmd}: ${stderr.toString()}`,
+              `[squeezelite_mc] Failed to execute ${cmd}: ${stderr}`,
               error
             )
           );
           reject(error);
         } else {
-          resolve(stdout.toString());
+          resolve(stdout);
         }
       }
     );

@@ -126,8 +126,8 @@ export default class Proxy {
   }
 
   #handleRequest(req: express.Request, res: express.Response) {
-    const serverName = req.query.server_name;
-    const url = req.query.url;
+    const serverName = req.query.server_name as string | undefined;
+    const url = req.query.url as string | undefined;
     const fallback = req.query.fallback;
 
     /**

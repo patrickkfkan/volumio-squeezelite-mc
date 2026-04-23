@@ -152,7 +152,7 @@ export default class PlayerFinder extends EventEmitter {
 
     void (async () => {
       try {
-        this.#monitors[server.ip] = await this.#createMonitor(server);
+        this.#monitors[server.ip] = this.#createMonitor(server);
         const players = await this.#getPlayersOnServer(
           server,
           this.#monitors[server.ip]
@@ -162,7 +162,7 @@ export default class PlayerFinder extends EventEmitter {
           this.#filterAndEmit('found', players);
         }
         try {
-          this.#monitors[server.ip].start();
+          await this.#monitors[server.ip].start();
           sm.getLogger().info('[squeezelite_mc] Player monitor started');
         } catch (error) {
           sm.getLogger().error(
@@ -316,7 +316,7 @@ export default class PlayerFinder extends EventEmitter {
     }
   }
 
-  async #createMonitor(server: Server) {
+  #createMonitor(server: Server) {
     const monitor = new LmsPlayerMonitor(
       getLmsPlayerMonitorConfig(server, this.#opts.serverCredentials)
     );

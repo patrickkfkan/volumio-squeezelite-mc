@@ -29,7 +29,7 @@ export async function sendRpcRequest(
       method: 'post',
       body: JSON.stringify(body),
       headers,
-      signal: abortController ? (abortController.signal as any) : undefined
+      signal: abortController ? abortController.signal : undefined
     });
 
     if (response.ok) {
