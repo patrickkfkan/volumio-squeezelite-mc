@@ -15,12 +15,10 @@ export interface BasicPlayerConfig {
   playerNameType: 'hostname' | 'custom';
   playerName: string;
   dsdPlayback: DSDPlayback;
-  fadeOnPauseResume: boolean;
 }
 
 export interface ManualPlayerConfig {
   type: 'manual';
-  fadeOnPauseResume: boolean;
   startupOptions: string;
 }
 
@@ -37,13 +35,11 @@ const defaultBasicPlayerConfig: BasicPlayerConfig = {
   type: 'basic',
   playerNameType: 'hostname',
   playerName: '',
-  dsdPlayback: 'auto',
-  fadeOnPauseResume: true
+  dsdPlayback: 'auto'
 } as const;
 
 const defaultManualPlayerConfig: ManualPlayerConfig = {
   type: 'manual',
-  fadeOnPauseResume: true,
   startupOptions: ''
 } as const;
 

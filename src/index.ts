@@ -216,7 +216,7 @@ class ControllerSqueezeliteMC {
      * Squeezelite conf
      */
     if (playerConfig.type === 'basic') {
-      const { playerNameType, playerName, dsdPlayback, fadeOnPauseResume } = playerConfig;
+      const { playerNameType, playerName, dsdPlayback } = playerConfig;
       // Player name
       squeezeliteBasicUIConf.content[1].value = {
         value: playerNameType
@@ -259,12 +259,9 @@ class ControllerSqueezeliteMC {
         default: // 'auto'
           squeezeliteBasicUIConf.content[3].value.label = sm.getI18n('SQUEEZELITE_MC_DSD_PLAYBACK_AUTO');
       }
-      // Fade on pause / resume
-      squeezeliteBasicUIConf.content[4].value = fadeOnPauseResume;
     }
     else { // 'manual' playerConfigType
-      squeezeliteManualUIConf.content[1].value = playerConfig.fadeOnPauseResume;
-      squeezeliteManualUIConf.content[2].value = playerConfig.startupOptions;
+      squeezeliteManualUIConf.content[1].value = playerConfig.startupOptions;
 
       // Get suggested startup options
       let suggestedStartupOptions;
@@ -280,9 +277,9 @@ class ControllerSqueezeliteMC {
           squeezeliteManualUIConf.description = sm.getI18n('SQUEEZELITE_MC_ERR_SUGGESTED_STARTUP_OPTS');
         }
       }
-      squeezeliteManualUIConf.content[3].value = suggestedStartupOptions;
+      squeezeliteManualUIConf.content[2].value = suggestedStartupOptions;
       // Apply suggested button payload
-      squeezeliteManualUIConf.content[4].onClick.data.data = {
+      squeezeliteManualUIConf.content[3].onClick.data.data = {
         startupOptions: suggestedStartupOptions
       };
     }
@@ -510,9 +507,7 @@ class ControllerSqueezeliteMC {
           if (this.#volumioVolume !== undefined) {
             await this.#commandDispatcher.sendVolume(this.#volumioVolume);
           }
-  
-          await this.#applyFadeOnPauseResume();
-  
+   
           await this.#clearPlayerStatusMonitor(); // Ensure there is only one monitor instance
           const playerStatusMonitor = new PlayerStatusMonitor(player, serverCredentials);
           this.#playerStatusMonitor = playerStatusMonitor;
@@ -553,20 +548,6 @@ class ControllerSqueezeliteMC {
           playerId: macAddresses
         }
       });
-    }
-  }
-
-  #applyFadeOnPauseResume() {
-    const { fadeOnPauseResume } = this.#getPlayerConfig();
-    if (this.#commandDispatcher && fadeOnPauseResume) {
-      /**
-       * Set LMS Player Settings -> Audio -> Volume Control to 'Output level is fixed at 100%'.
-       * This is to avoid Squeezelite from zero-ing out the volume on pause, which obviously
-       * causes problems with native DSD playback. Also, after Squeezelite mutes the volume on pause,
-       * playing from another Volumio source will not restore the volume to its previous level (i.e.
-       * it stays muted).
-       */
-      return this.#commandDispatcher.sendPref('digitalVolumeControl', 0);
     }
   }
 
@@ -1259,12 +1240,9 @@ class ControllerSqueezeliteMC {
       type: 'basic',
       playerNameType,
       playerName,
-      dsdPlayback,
-      fadeOnPauseResume: data.fadeOnPauseResume
+      dsdPlayback
     };
     sm.setConfigValue('basicPlayerConfig', newConfig);
-
-    await this.#applyFadeOnPauseResume();
 
     if (!revalidate) {
       sm.toast('success', sm.getI18n('SQUEEZELITE_MC_SETTINGS_SAVED'));
@@ -1283,12 +1261,9 @@ class ControllerSqueezeliteMC {
 
     const newConfig: ManualPlayerConfig = {
       type: 'manual',
-      fadeOnPauseResume: data.fadeOnPauseResume,
       startupOptions
     };
     sm.setConfigValue('manualPlayerConfig', newConfig);
-
-    await this.#applyFadeOnPauseResume();
 
     if (startupOptions === oldStartupOptions) {
       sm.toast('success', sm.getI18n('SQUEEZELITE_MC_SETTINGS_SAVED'));
