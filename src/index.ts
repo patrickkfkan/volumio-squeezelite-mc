@@ -379,8 +379,7 @@ class ControllerSqueezeliteMC {
       serversSelectData
         .map((select) => select.value)
         .forEach((serverName) => {
-          const { username, password } =
-            serverCredentials[serverName] || {};
+          const { username, password } = serverCredentials[serverName] || {};
           const usernameField = {
             id: `${serverName}_username`,
             type: 'text',
