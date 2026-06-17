@@ -654,9 +654,13 @@ class ControllerSqueezeliteMC {
 
           try {
             await playerStatusMonitor.start();
-          }
-          catch (error) {
-            sm.getLogger().error(sm.getErrorMessage('[squeezelite_mc] Error starting player status monitor:', error));
+          } catch (error) {
+            sm.getLogger().error(
+              sm.getErrorMessage(
+                '[squeezelite_mc] Error starting player status monitor:',
+                error
+              )
+            );
             return;
           }
 
@@ -701,9 +705,13 @@ class ControllerSqueezeliteMC {
             playerId: macAddresses
           }
         });
-      }
-      catch (error) {
-        sm.getLogger().error(sm.getErrorMessage('[squeezelite_mc] Error starting player finder:', error));
+      } catch (error) {
+        sm.getLogger().error(
+          sm.getErrorMessage(
+            '[squeezelite_mc] Error starting player finder:',
+            error
+          )
+        );
       }
     }
   }

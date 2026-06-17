@@ -1,12 +1,17 @@
-import { type Logger } from "lms-player-monitor";
+import { type Logger } from 'lms-player-monitor';
 import sm from './SqueezeliteMCContext';
 
 export type ChildProcessLogLevel = keyof Logger;
 
-export type ChildMessage = 
-  { type: 'log'; payload: { level: ChildProcessLogLevel; message: string; } };
+export type ChildMessage = {
+  type: 'log';
+  payload: { level: ChildProcessLogLevel; message: string };
+};
 
-export function logChildProcessMessage(level: ChildProcessLogLevel, message: string) {
+export function logChildProcessMessage(
+  level: ChildProcessLogLevel,
+  message: string
+) {
   switch (level) {
     case 'debug':
       sm.getLogger().verbose(message);

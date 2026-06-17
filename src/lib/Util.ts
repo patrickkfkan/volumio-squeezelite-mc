@@ -186,7 +186,11 @@ export function getLmsPlayerMonitorConfig(
   };
 }
 
-export function getErrorMessage(message: string, error: unknown, stack = false) {
+export function getErrorMessage(
+  message: string,
+  error: unknown,
+  stack = false
+) {
   let result = message;
   if (error instanceof Error) {
     if (error.message) {

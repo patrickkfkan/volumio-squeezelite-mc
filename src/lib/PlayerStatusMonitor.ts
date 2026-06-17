@@ -37,7 +37,7 @@ export default class PlayerStatusMonitor extends EventEmitter {
     sm.getLogger().verbose(
       `[squeezelite_mc] PlayerStatusMonitor: fork child process at ${childPath}`
     );
-      
+
     this.#child = fork(childPath, [], {
       stdio: ['pipe', 'pipe', 'pipe', 'ipc']
     });
@@ -169,7 +169,10 @@ export default class PlayerStatusMonitor extends EventEmitter {
 
   #handleChildError(error: Error) {
     sm.getLogger().error(
-      sm.getErrorMessage('[squeezelite_mc] PlayerStatusMonitor: child process error: ', error)
+      sm.getErrorMessage(
+        '[squeezelite_mc] PlayerStatusMonitor: child process error: ',
+        error
+      )
     );
     if (this.#startReject) {
       this.#startReject(error);

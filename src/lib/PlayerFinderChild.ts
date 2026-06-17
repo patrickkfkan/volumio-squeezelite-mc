@@ -26,10 +26,11 @@ export type PlayerFinderChildMessage =
   | { type: 'started' }
   | { type: 'found'; payload: Player[] }
   | { type: 'lost'; payload: Player[] }
-  | { type: 'error'; payload: { message: string } }
+  | { type: 'error'; payload: { message: string } };
 
 async function runChildProcess() {
-  const { LmsPlayerMonitor } = await loadEsm<typeof import('lms-player-monitor')>('lms-player-monitor');
+  const { LmsPlayerMonitor } =
+    await loadEsm<typeof import('lms-player-monitor')>('lms-player-monitor');
 
   const sendToParent = (message: PlayerFinderChildMessage) => {
     if (process.send) {
@@ -45,11 +46,9 @@ async function runChildProcess() {
         message
       }
     });
-  }
+  };
 
-  log('debug',
-    '[squeezelite_mc] PlayerFinderChild process starting'
-  );
+  log('debug', '[squeezelite_mc] PlayerFinderChild process starting');
 
   const foundPlayers: Player[] = [];
   const monitors: {
@@ -62,7 +61,8 @@ async function runChildProcess() {
     monitor: InstanceType<typeof LmsPlayerMonitor>
   ): Promise<Player[]> => {
     try {
-      log('info',
+      log(
+        'info',
         `[squeezelite_mc] Getting players connected to ${server.name} (${server.ip})`
       );
       const players = await monitor.getPlayers();
@@ -77,12 +77,14 @@ async function runChildProcess() {
           name: player.name,
           server
         }));
-      log('info',
+      log(
+        'info',
         `[squeezelite_mc] Players connected to ${server.name} (${server.ip}): ${JSON.stringify(result)}`
       );
       return result;
     } catch (error) {
-      log('error',
+      log(
+        'error',
         getErrorMessage(
           `[squeezelite_mc] Failed to get players on server ${server.name} (${server.ip}):`,
           error
@@ -125,14 +127,17 @@ async function runChildProcess() {
     return monitor;
   };
 
-  const clearMonitor = async (monitor: InstanceType<typeof LmsPlayerMonitor>) => {
+  const clearMonitor = async (
+    monitor: InstanceType<typeof LmsPlayerMonitor>
+  ) => {
     monitor.removeAllListeners('serverDisconnect');
     monitor.removeAllListeners('playerConnect');
     monitor.removeAllListeners('playerDisconnect');
     try {
       await monitor.stop();
     } catch (error) {
-      log('error',
+      log(
+        'error',
         getErrorMessage('Error stopping player monitor:', error, false)
       );
     }
@@ -162,7 +167,8 @@ async function runChildProcess() {
         name: player.name,
         server
       };
-      log('info',
+      log(
+        'info',
         `[squeezelite_mc] Player connected to ${server.name} (${server.ip}): ${JSON.stringify(
           {
             id: mapped.id,
@@ -180,10 +186,7 @@ async function runChildProcess() {
     removeAndEmitLostByPlayerId(player.playerId);
   };
 
-  const filterAndEmit = (
-    eventName: 'found' | 'lost',
-    players: Player[]
-  ) => {
+  const filterAndEmit = (eventName: 'found' | 'lost', players: Player[]) => {
     const eventFilter = opts.eventFilter;
     if (!eventFilter) {
       sendToParent({ type: eventName, payload: players });
@@ -226,7 +229,8 @@ async function runChildProcess() {
 
   const handleServerDiscovered = (data: ServerInfo | Server) => {
     if (!data.cliPort) {
-      log('warn',
+      log(
+        'warn',
         `[squeezelite_mc] Disregarding discovered server due to missing CLI port: ${JSON.stringify(data)}`
       );
       return;
@@ -239,7 +243,8 @@ async function runChildProcess() {
       jsonPort: data.jsonPort,
       cliPort: data.cliPort
     };
-    log('info',
+    log(
+      'info',
       `[squeezelite_mc] Server discovered: ${JSON.stringify(server)}`
     );
 
@@ -253,9 +258,10 @@ async function runChildProcess() {
         }
         try {
           await monitors[server.ip].start();
-          log('info','[squeezelite_mc] Player monitor started');
+          log('info', '[squeezelite_mc] Player monitor started');
         } catch (error) {
-          log('error',
+          log(
+            'error',
             getErrorMessage(
               `[squeezelite_mc] Failed to start player monitor on ${server.name} (${server.ip}):`,
               error
@@ -274,7 +280,8 @@ async function runChildProcess() {
           throw error;
         }
       } catch (error) {
-        log('error',
+        log(
+          'error',
           getErrorMessage(
             '[squeezelite_mc] An error occurred while processing discovered server:',
             error
@@ -285,9 +292,7 @@ async function runChildProcess() {
   };
 
   const handleServerLost = (server: ServerInfo | Server) => {
-    log('info',
-      `[squeezelite_mc] Server lost: ${JSON.stringify(server)}`
-    );
+    log('info', `[squeezelite_mc] Server lost: ${JSON.stringify(server)}`);
     const lost = foundPlayers.filter(
       (player) => player.server.ip === server.ip
     );
@@ -317,24 +322,23 @@ async function runChildProcess() {
       try {
         switch (message.type) {
           case 'start': {
-            log('debug',
+            log(
+              'debug',
               '[squeezelite_mc] PlayerFinderChild handling start request'
             );
             opts = message.payload;
 
             // Start server discovery
-            serverDiscovery.on(
-              'discovered',
-              handleServerDiscovered
-            );
+            serverDiscovery.on('discovered', handleServerDiscovered);
             serverDiscovery.on('lost', handleServerLost);
             serverDiscovery.start();
-            log('info','[squeezelite_mc] Server discovery started');
+            log('info', '[squeezelite_mc] Server discovery started');
             sendToParent({ type: 'started' });
             break;
           }
           case 'stop': {
-            log('debug',
+            log(
+              'debug',
               '[squeezelite_mc] PlayerFinderChild handling stop request'
             );
             serverDiscovery.removeAllListeners('discovered');
@@ -361,7 +365,8 @@ async function runChildProcess() {
 
   process.on('disconnect', () => {
     void (async () => {
-      log('debug',
+      log(
+        'debug',
         '[squeezelite_mc] PlayerFinderChild process disconnect event'
       );
       serverDiscovery.removeAllListeners('discovered');
@@ -374,7 +379,9 @@ async function runChildProcess() {
   });
 
   process.on('uncaughtException', (error) => {
-    log('error', getErrorMessage(
+    log(
+      'error',
+      getErrorMessage(
         '[squeezelite_mc] PlayerFinderChild uncaught exception',
         error
       )

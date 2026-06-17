@@ -3,9 +3,7 @@ import { type PlayerStatus } from './types/Player';
 import type Player from './types/Player';
 import { type ServerCredentials } from './types/Server';
 import { getErrorMessage, getLmsPlayerMonitorConfig } from './Util';
-import type {
-  PlayerStatus as MonitoredPlayerStatus
-} from 'lms-player-monitor';
+import type { PlayerStatus as MonitoredPlayerStatus } from 'lms-player-monitor';
 import { loadEsm } from 'load-esm';
 
 interface ChildStartPayload {
@@ -58,7 +56,8 @@ function mapMonitoredPlayerStatus(status: MonitoredPlayerStatus): PlayerStatus {
 }
 
 async function runChildProcess() {
-  const { LmsPlayerMonitor } = await loadEsm<typeof import('lms-player-monitor')>('lms-player-monitor');
+  const { LmsPlayerMonitor } =
+    await loadEsm<typeof import('lms-player-monitor')>('lms-player-monitor');
   let monitor: InstanceType<typeof LmsPlayerMonitor> | null = null;
   let currentPlayer: Player | null = null;
   let currentServerCredentials: ServerCredentials | null = null;
@@ -70,7 +69,12 @@ async function runChildProcess() {
     }
   };
 
-  const log = (level: (PlayerStatusMonitorChildMessage & { type: 'log' })['payload']['level'], message: string) => {
+  const log = (
+    level: (PlayerStatusMonitorChildMessage & {
+      type: 'log';
+    })['payload']['level'],
+    message: string
+  ) => {
     sendToParent({
       type: 'log',
       payload: {
@@ -78,11 +82,9 @@ async function runChildProcess() {
         message
       }
     });
-  }
+  };
 
-  log('debug',
-    '[squeezelite_mc] PlayerStatusMonitorChild process starting'
-  );
+  log('debug', '[squeezelite_mc] PlayerStatusMonitorChild process starting');
 
   const emitStatus = (player: Player, status: MonitoredPlayerStatus) => {
     sendToParent({
@@ -114,7 +116,10 @@ async function runChildProcess() {
     sendToParent({ type: 'disconnect' });
   };
 
-  const createAndStartMonitor = async (player: Player, serverCredentials: ServerCredentials) => {
+  const createAndStartMonitor = async (
+    player: Player,
+    serverCredentials: ServerCredentials
+  ) => {
     const monitorInstance = new LmsPlayerMonitor(
       getLmsPlayerMonitorConfig(player.server, serverCredentials, {
         debug: (msg) =>
@@ -173,7 +178,10 @@ async function runChildProcess() {
           case 'start': {
             currentPlayer = message.payload.player;
             currentServerCredentials = message.payload.serverCredentials;
-            monitor = await createAndStartMonitor(currentPlayer, currentServerCredentials);
+            monitor = await createAndStartMonitor(
+              currentPlayer,
+              currentServerCredentials
+            );
             sendToParent({ type: 'started' });
 
             try {

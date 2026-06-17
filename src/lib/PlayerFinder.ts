@@ -174,7 +174,10 @@ export default class PlayerFinder extends EventEmitter {
 
   #handleChildError(error: Error) {
     sm.getLogger().error(
-      sm.getErrorMessage('[squeezelite_mc] PlayerFinder: child process error: ', error)
+      sm.getErrorMessage(
+        '[squeezelite_mc] PlayerFinder: child process error: ',
+        error
+      )
     );
     if (this.#startReject) {
       this.#startReject(error);
